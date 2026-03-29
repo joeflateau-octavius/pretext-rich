@@ -912,6 +912,8 @@ function applyCompositeOuterGeometry(el, frag) {
   el.style.display = "inline-flex";
   el.style.boxSizing = "border-box";
   el.style.width = contentBoxWidth + "px";
+  el.style.minWidth = contentBoxWidth + "px";
+  el.style.maxWidth = contentBoxWidth + "px";
   el.style.height = frag.height + "px";
   el.style.flexShrink = "0";
 
@@ -921,6 +923,7 @@ function applyCompositeOuterGeometry(el, frag) {
   el.dataset.marginLeft = String(frag.marginLeft ?? 0);
   el.dataset.marginRight = String(frag.marginRight ?? 0);
   el.dataset.contentBoxWidth = String(contentBoxWidth);
+  el.dataset.expectedOuterWidth = String(contentBoxWidth);
 }
 
 function positionFragment(el, frag, lineHeight, elementHeight = null) {
