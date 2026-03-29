@@ -121,6 +121,11 @@ const heights = blocks.map((b) => measureHeight(b, containerWidth, lineHeight));
 
 3. **No space characters** — Inter-run whitespace is always a pixel `leadingGap`, never inserted space characters. This matches how CSS inline layout collapses whitespace between inline elements.
 
+## Testing
+
+- `npm test` runs fast unit tests that validate algorithmic invariants in the layout math.
+- `npm run test:render` runs Playwright browser tests against `docs/index.html` to validate real rendering fidelity (geometry, overflow, and glyph rendering).
+
 ## License
 
 MIT

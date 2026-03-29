@@ -211,7 +211,8 @@
     padding: 16px;
     min-height: 60px;
     position: relative;
-    overflow: visible;
+    overflow-x: visible;
+    overflow-y: visible;
   }
 
   .render-line {
@@ -219,6 +220,8 @@
     align-items: center;
     flex-wrap: nowrap;
     white-space: nowrap;
+    width: 100%;
+    min-width: 0;
   }
 
   .frag-text {
@@ -256,18 +259,19 @@
     border: 1px solid rgba(74,159,255,0.3);
     font-size: 14px;
     vertical-align: middle;
+    flex-shrink: 0;
   }
 
   /* ── Chip styles ── */
   .chip-mention {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
     background: rgba(0, 229, 255, 0.15);
     border-radius: 12px;
-    padding: 2px 6px 2px 3px;
     vertical-align: middle;
     line-height: 1;
+    box-sizing: border-box;
+    flex-shrink: 0;
   }
 
   .chip-mention .avatar-circle {
@@ -287,9 +291,10 @@
     align-items: center;
     background: var(--code-bg);
     border-radius: 10px;
-    padding: 2px 8px;
     vertical-align: middle;
     line-height: 1;
+    box-sizing: border-box;
+    flex-shrink: 0;
   }
 
   .chip-tag-text {
@@ -303,11 +308,12 @@
   .chip-quote {
     display: inline-block;
     background: rgba(74, 159, 255, 0.06);
-    border-left: 3px solid var(--accent);
-    border-radius: 0 8px 8px 0;
-    padding: 8px 12px;
+    border: 1px solid rgba(74, 159, 255, 0.3);
+    border-radius: 8px;
     vertical-align: top;
     line-height: 1;
+    box-sizing: border-box;
+    flex-shrink: 0;
   }
 
   .chip-quote .quote-inner-line {
@@ -315,6 +321,8 @@
     align-items: center;
     flex-wrap: nowrap;
     white-space: nowrap;
+    width: 100%;
+    min-width: 0;
   }
 
   .chip-quote .quote-inner-line .frag-text {
@@ -511,7 +519,7 @@
 
       <div class="demos">
         <!-- Demo 1: Chat Message -->
-        <div class="demo-card">
+        <div class="demo-card" id="demo-chat">
           <h2>💬 Chat Message</h2>
           <p class="subtitle">Mixed text runs with mention chips (composite), code spans, and inline boxes. Drag the slider to re-layout in real time.</p>
 
@@ -521,7 +529,7 @@
             <span class="slider-value" id="widthValue">520px</span>
           </div>
 
-          <div class="render-area" id="chatRender" style="max-width:520px"></div>
+          <div class="render-area" id="chatRender" style="width:520px"></div>
 
           <div class="stats" id="chatStats"></div>
         </div>
@@ -534,14 +542,14 @@
         </div>
 
         <!-- Demo 3: International text -->
-        <div class="demo-card">
+        <div class="demo-card" id="demo-intl">
           <h2>🌍 International Text</h2>
           <p class="subtitle">Measuring text across scripts, emoji, and mixed directions — all at 400px container width.</p>
           <div class="intl-grid" id="intlGrid"></div>
         </div>
 
         <!-- Demo 4: Nested Layout -->
-        <div class="demo-card">
+        <div class="demo-card" id="demo-nested">
           <h2>🧩 Nested Layout</h2>
           <p class="subtitle">Composites: inline paragraphs within paragraphs</p>
           <div class="nested-examples" id="nestedExamples"></div>
@@ -882,6 +890,26 @@ function getInitials(name) {
 }
 
 /**
+ * Apply deterministic, data-driven outer geometry for composite fragments.
+ */
+function applyCompositeOuterGeometry(el, frag) {
+  const contentBoxWidth = Math.max(0, frag.width - frag.marginLeft - frag.marginRight);
+  el.style.display = "inline-flex";
+  el.style.boxSizing = "border-box";
+  el.style.width = contentBoxWidth + "px";
+  el.style.marginLeft = (frag.leadingGap + frag.marginLeft) + "px";
+  el.style.marginRight = frag.marginRight + "px";
+  el.style.flexShrink = "0";
+
+  el.dataset.composite = "true";
+  el.dataset.chromeWidth = String(frag.chromeWidth ?? 0);
+  el.dataset.chromeHeight = String(frag.chromeHeight ?? 0);
+  el.dataset.marginLeft = String(frag.marginLeft ?? 0);
+  el.dataset.marginRight = String(frag.marginRight ?? 0);
+  el.dataset.contentBoxWidth = String(contentBoxWidth);
+}
+
+/**
  * Render a composite fragment into a DOM element.
  */
 function renderCompositeFragment(frag) {
@@ -889,10 +917,17 @@ function renderCompositeFragment(frag) {
     const innerFrags = frag.innerLayout.lines[0].fragments;
     const boxFrag = innerFrags[0];
     const textFrag = innerFrags[1];
+    const padX = Math.max(0, (frag.chromeWidth ?? 0) / 2);
 
     const pill = document.createElement("span");
     pill.className = "chip-mention";
-    pill.style.marginLeft = frag.leadingGap + "px";
+    pill.setAttribute("data-kind", "mention-chip");
+    applyCompositeOuterGeometry(pill, frag);
+    pill.style.paddingLeft = padX + "px";
+    pill.style.paddingRight = padX + "px";
+    pill.style.paddingTop = "2px";
+    pill.style.paddingBottom = "2px";
+    pill.style.gap = (textFrag.leadingGap ?? 0) + "px";
 
     const avatar = document.createElement("span");
     avatar.className = "avatar-circle";
@@ -913,13 +948,20 @@ function renderCompositeFragment(frag) {
 
   if (isTagChip(frag)) {
     const textFrag = frag.innerLayout.lines[0].fragments[0];
+    const padX = Math.max(0, (frag.chromeWidth ?? 0) / 2);
 
     const pill = document.createElement("span");
     pill.className = "chip-tag";
-    pill.style.marginLeft = frag.leadingGap + "px";
+    pill.setAttribute("data-kind", "tag-chip");
+    applyCompositeOuterGeometry(pill, frag);
+    pill.style.paddingLeft = padX + "px";
+    pill.style.paddingRight = padX + "px";
+    pill.style.paddingTop = "2px";
+    pill.style.paddingBottom = "2px";
 
     const label = document.createElement("span");
     label.className = "chip-tag-text";
+    label.style.marginLeft = (textFrag.leadingGap ?? 0) + "px";
     label.textContent = textFrag.text;
 
     pill.appendChild(label);
@@ -929,7 +971,17 @@ function renderCompositeFragment(frag) {
   // Generic composite / quote block: render with recursive inner layout
   const wrapper = document.createElement("span");
   wrapper.className = "chip-quote";
-  wrapper.style.marginLeft = frag.leadingGap + "px";
+  wrapper.setAttribute("data-kind", "generic-composite");
+  applyCompositeOuterGeometry(wrapper, frag);
+  wrapper.style.flexDirection = "column";
+  wrapper.style.alignItems = "stretch";
+
+  const padX = Math.max(0, (frag.chromeWidth ?? 0) / 2);
+  const padY = Math.max(0, (frag.chromeHeight ?? 0) / 2);
+  wrapper.style.paddingLeft = padX + "px";
+  wrapper.style.paddingRight = padX + "px";
+  wrapper.style.paddingTop = padY + "px";
+  wrapper.style.paddingBottom = padY + "px";
 
   const il = frag.innerLayout;
   for (const line of il.lines) {
@@ -947,6 +999,7 @@ function renderCompositeFragment(frag) {
         boxEl.style.width = innerFrag.width + "px";
         boxEl.style.height = innerFrag.height + "px";
         boxEl.style.marginLeft = innerFrag.leadingGap + "px";
+        boxEl.style.flexShrink = "0";
         lineEl.appendChild(boxEl);
       } else {
         const spanEl = document.createElement("span");
@@ -966,9 +1019,10 @@ function renderCompositeFragment(frag) {
 
 function renderRichLayout(result, container, styleMap) {
   container.innerHTML = "";
-  for (const line of result.lines) {
+  result.lines.forEach((line, lineIndex) => {
     const lineEl = document.createElement("div");
     lineEl.className = "render-line";
+    lineEl.dataset.lineIndex = String(lineIndex);
     lineEl.style.height = line.height + "px";
     lineEl.style.lineHeight = line.height + "px";
 
@@ -978,9 +1032,11 @@ function renderRichLayout(result, container, styleMap) {
       } else if (frag.kind === "box") {
         const boxEl = document.createElement("span");
         boxEl.className = "frag-box";
+        boxEl.dataset.kind = "inline-box";
         boxEl.style.width = frag.width + "px";
         boxEl.style.height = frag.height + "px";
         boxEl.style.marginLeft = frag.leadingGap + "px";
+        boxEl.style.flexShrink = "0";
         boxEl.textContent = "😊";
         lineEl.appendChild(boxEl);
       } else {
@@ -996,7 +1052,18 @@ function renderRichLayout(result, container, styleMap) {
       }
     }
     container.appendChild(lineEl);
-  }
+  });
+}
+
+function getRenderableContentWidth(renderArea, targetWidth) {
+  renderArea.style.width = targetWidth + "px";
+  const style = getComputedStyle(renderArea);
+  const horizontalChrome =
+    (parseFloat(style.paddingLeft) || 0) +
+    (parseFloat(style.paddingRight) || 0) +
+    (parseFloat(style.borderLeftWidth) || 0) +
+    (parseFloat(style.borderRightWidth) || 0);
+  return Math.max(1, targetWidth - horizontalChrome);
 }
 
 // ── Demo 1: Chat Message ──
@@ -1030,10 +1097,10 @@ function runDemo1() {
   function update() {
     const width = parseInt(slider.value);
     valueLabel.textContent = width + "px";
-    renderArea.style.maxWidth = width + "px";
+    const contentWidth = getRenderableContentWidth(renderArea, width);
 
     const t0 = performance.now();
-    const result = layoutRuns(prepared, width, LINE_HEIGHT);
+    const result = layoutRuns(prepared, contentWidth, LINE_HEIGHT);
     const elapsed = ((performance.now() - t0) * 1000).toFixed(0);
 
     renderRichLayout(result, renderArea, CHAT_RUN_STYLE_MAP);
@@ -1153,24 +1220,26 @@ function runDemo4() {
     ];
 
     const prepared = prepareRuns(runs);
-    const result = layoutRuns(prepared, 480, LINE_HEIGHT);
 
     const renderArea = document.createElement("div");
-    renderArea.className = "render-area";
-    renderArea.style.maxWidth = "480px";
-    renderRichLayout(result, renderArea, {});
+    renderArea.className = "render-area nested-render-area";
 
     const stats = document.createElement("div");
     stats.className = "stats";
+
+    example.appendChild(renderArea);
+    example.appendChild(stats);
+    container.appendChild(example);
+
+    const contentWidth = getRenderableContentWidth(renderArea, 480);
+    const result = layoutRuns(prepared, contentWidth, LINE_HEIGHT);
+    renderRichLayout(result, renderArea, {});
+
     stats.innerHTML = `
       <span class="stat">Width: <strong>480px</strong></span>
       <span class="stat">Lines: <strong>${result.lines.length}</strong></span>
       <span class="stat">Height: <strong>${result.totalHeight}px</strong></span>
     `;
-
-    example.appendChild(renderArea);
-    example.appendChild(stats);
-    container.appendChild(example);
   }
 
   // Example B: Status tags with slider
@@ -1192,8 +1261,8 @@ function runDemo4() {
     `;
 
     const renderArea = document.createElement("div");
-    renderArea.className = "render-area";
-    renderArea.style.maxWidth = "400px";
+    renderArea.className = "render-area nested-render-area";
+    renderArea.style.width = "400px";
     renderArea.id = "tagRender";
 
     const stats = document.createElement("div");
@@ -1222,9 +1291,9 @@ function runDemo4() {
       const valueLabel = document.getElementById(valueId);
       const width = parseInt(slider.value);
       valueLabel.textContent = width + "px";
-      renderArea.style.maxWidth = width + "px";
+      const contentWidth = getRenderableContentWidth(renderArea, width);
 
-      const result = layoutRuns(prepared, width, LINE_HEIGHT);
+      const result = layoutRuns(prepared, contentWidth, LINE_HEIGHT);
       renderRichLayout(result, renderArea, {});
 
       stats.innerHTML = `
@@ -1265,15 +1334,21 @@ function runDemo4() {
     ];
 
     const prepared = prepareRuns(runs);
-    const result = layoutRuns(prepared, 500, LINE_HEIGHT);
 
     const renderArea = document.createElement("div");
-    renderArea.className = "render-area";
-    renderArea.style.maxWidth = "500px";
-    renderRichLayout(result, renderArea, {});
+    renderArea.className = "render-area nested-render-area";
 
     const stats = document.createElement("div");
     stats.className = "stats";
+
+    example.appendChild(renderArea);
+    example.appendChild(stats);
+    container.appendChild(example);
+
+    const contentWidth = getRenderableContentWidth(renderArea, 500);
+    const result = layoutRuns(prepared, contentWidth, LINE_HEIGHT);
+    renderRichLayout(result, renderArea, {});
+
     stats.innerHTML = `
       <span class="stat">Width: <strong>500px</strong></span>
       <span class="stat">Lines: <strong>${result.lines.length}</strong></span>
@@ -1288,10 +1363,6 @@ function runDemo4() {
         return "?";
       })()}</strong></span>
     `;
-
-    example.appendChild(renderArea);
-    example.appendChild(stats);
-    container.appendChild(example);
   }
 }
 
