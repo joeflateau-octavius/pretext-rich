@@ -59,8 +59,39 @@ export function layoutRuns(
             runIndex: item.runIndex,
             leadingGap,
             x: lineWidth,
+            width: item.contentWidth,
+            height: item.height,
+          });
+          lineWidth += totalWidth;
+          remainingWidth = Math.max(0, safeWidth - lineWidth);
+          itemIndex++;
+          textCursor = null;
+          continue;
+        }
+
+        case "composite": {
+          const leadingGap = fragments.length === 0 ? 0 : item.leadingGap;
+          const totalWidth = leadingGap + item.width;
+
+          // If it doesn't fit and we're not at line start, break to next line
+          if (fragments.length > 0 && totalWidth > remainingWidth) break lineLoop;
+
+          // Track tallest item on this line
+          if (item.height > maxBoxHeight) maxBoxHeight = item.height;
+
+          fragments.push({
+            kind: "composite",
+            runIndex: item.runIndex,
+            leadingGap,
+            x: lineWidth,
             width: item.width,
             height: item.height,
+            innerWidth: item.innerWidth,
+            innerLayout: item.innerLayout,
+            chromeWidth: item.chromeWidth,
+            chromeHeight: item.chromeHeight,
+            marginLeft: item.marginLeft,
+            marginRight: item.marginRight,
           });
           lineWidth += totalWidth;
           remainingWidth = Math.max(0, safeWidth - lineWidth);

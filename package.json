@@ -5,7 +5,8 @@
   "main": "src/index.ts",
   "type": "module",
   "scripts": {
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "test": "node --import tsx/esm --test 'src/__tests__/**/*.test.ts'"
   },
   "keywords": [
     "layout",
@@ -18,6 +19,8 @@
     "@chenglou/pretext": "^0.0.3"
   },
   "devDependencies": {
+    "@types/node": "^25.5.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
 }

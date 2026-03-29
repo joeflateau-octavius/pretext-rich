@@ -6,10 +6,12 @@ import {
   type PreparedTextWithSegments,
 } from "@chenglou/pretext";
 
-import type { InlineRun, PreparedItem, PreparedRuns } from "./types.js";
+import type { InlineRun, PreparedItem, PreparedRuns, RichLayout } from "./types.js";
+import { layoutRuns } from "./layout.js";
 
 const LINE_START_CURSOR: LayoutCursor = { segmentIndex: 0, graphemeIndex: 0 };
 const UNBOUNDED_WIDTH = 100_000;
+const DEFAULT_INNER_LINE_HEIGHT = 20;
 
 // ── Collapsed space width cache ──────────────────────────────────────
 
@@ -32,6 +34,20 @@ function measureCollapsedSpaceWidth(font: string): number {
   const collapsedWidth = Math.max(0, joinedWidth - compactWidth);
   collapsedSpaceWidthCache.set(font, collapsedWidth);
   return collapsedWidth;
+}
+
+// ── Natural width from prepared items ────────────────────────────────
+
+function computeNaturalWidth(items: PreparedItem[]): number {
+  let totalWidth = 0;
+  for (const item of items) {
+    const gap = totalWidth > 0 ? item.leadingGap : 0;
+    const itemWidth = item.kind === "text"
+      ? item.fullWidth + item.chromeWidth
+      : item.width;
+    totalWidth += gap + itemWidth;
+  }
+  return totalWidth;
 }
 
 // ── prepareRuns ──────────────────────────────────────────────────────
@@ -63,12 +79,58 @@ export function prepareRuns(runs: InlineRun[]): PreparedRuns {
     switch (run.kind) {
       case "box": {
         const height = run.height ?? 0;
+        const marginLeft = run.marginLeft ?? 0;
+        const marginRight = run.marginRight ?? 0;
         items.push({
           kind: "box",
           runIndex: index,
           leadingGap: pendingGap,
-          width: run.width,
+          width: run.width + marginLeft + marginRight,
+          contentWidth: run.width,
           height,
+          marginLeft,
+          marginRight,
+        });
+        pendingGap = 0;
+        break;
+      }
+
+      case "composite": {
+        const chromeWidth = run.chromeWidth ?? 0;
+        const chromeHeight = run.chromeHeight ?? 0;
+        const marginLeft = run.marginLeft ?? 0;
+        const marginRight = run.marginRight ?? 0;
+
+        // 1. Recursively prepare inner runs
+        const innerPrepared = prepareRuns(run.runs);
+
+        // 2. Find natural (shrink-wrap) inner width from prepared items
+        const naturalWidth = computeNaturalWidth(innerPrepared._items);
+
+        // Apply maxWidth constraint
+        const innerWidth = run.maxWidth !== undefined
+          ? Math.min(naturalWidth, run.maxWidth)
+          : naturalWidth;
+
+        // 3. Layout inner content at the determined width
+        const innerLayout = layoutRuns(innerPrepared, innerWidth, DEFAULT_INNER_LINE_HEIGHT);
+
+        // 4. Compute total dimensions
+        const totalWidth = innerWidth + chromeWidth + marginLeft + marginRight;
+        const totalHeight = innerLayout.totalHeight + chromeHeight;
+
+        items.push({
+          kind: "composite",
+          runIndex: index,
+          leadingGap: pendingGap,
+          width: totalWidth,
+          height: totalHeight,
+          innerWidth,
+          innerLayout,
+          chromeWidth,
+          chromeHeight,
+          marginLeft,
+          marginRight,
         });
         pendingGap = 0;
         break;
