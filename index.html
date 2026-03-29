@@ -227,9 +227,8 @@
   }
 
   .render-line {
-    display: flex;
-    align-items: center;
-    flex-wrap: nowrap;
+    position: relative;
+    display: block;
     white-space: nowrap;
     width: 100%;
     min-width: 0;
@@ -306,14 +305,20 @@
     line-height: 1;
     box-sizing: border-box;
     flex-shrink: 0;
+    overflow: hidden;
   }
 
   .chip-tag-text {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
     font-family: var(--mono);
     font-size: 13px;
     color: #93c5fd;
     line-height: 1;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
   }
 
   .chip-quote {
@@ -328,9 +333,8 @@
   }
 
   .chip-quote .quote-inner-line {
-    display: flex;
-    align-items: center;
-    flex-wrap: nowrap;
+    position: relative;
+    display: block;
     white-space: nowrap;
     width: 100%;
     min-width: 0;
@@ -908,8 +912,7 @@ function applyCompositeOuterGeometry(el, frag) {
   el.style.display = "inline-flex";
   el.style.boxSizing = "border-box";
   el.style.width = contentBoxWidth + "px";
-  el.style.marginLeft = (frag.leadingGap + frag.marginLeft) + "px";
-  el.style.marginRight = frag.marginRight + "px";
+  el.style.height = frag.height + "px";
   el.style.flexShrink = "0";
 
   el.dataset.composite = "true";
@@ -918,6 +921,18 @@ function applyCompositeOuterGeometry(el, frag) {
   el.dataset.marginLeft = String(frag.marginLeft ?? 0);
   el.dataset.marginRight = String(frag.marginRight ?? 0);
   el.dataset.contentBoxWidth = String(contentBoxWidth);
+}
+
+function positionFragment(el, frag, lineHeight, elementHeight = null) {
+  const left = (frag.x ?? 0) + (frag.leadingGap ?? 0);
+  el.style.position = "absolute";
+  el.style.left = left + "px";
+  if (elementHeight === null) {
+    el.style.top = "0px";
+  } else {
+    const centeredTop = Math.max(0, (lineHeight - elementHeight) / 2);
+    el.style.top = centeredTop + "px";
+  }
 }
 
 /**
@@ -972,7 +987,6 @@ function renderCompositeFragment(frag) {
 
     const label = document.createElement("span");
     label.className = "chip-tag-text";
-    label.style.marginLeft = (textFrag.leadingGap ?? 0) + "px";
     label.textContent = textFrag.text;
 
     pill.appendChild(label);
@@ -998,26 +1012,31 @@ function renderCompositeFragment(frag) {
   for (const line of il.lines) {
     const lineEl = document.createElement("div");
     lineEl.className = "quote-inner-line";
+    lineEl.style.position = "relative";
     lineEl.style.height = line.height + "px";
     lineEl.style.lineHeight = line.height + "px";
+    lineEl.style.width = frag.innerWidth + "px";
 
     for (const innerFrag of line.fragments) {
       if (innerFrag.kind === "composite") {
-        lineEl.appendChild(renderCompositeFragment(innerFrag));
+        const compositeEl = renderCompositeFragment(innerFrag);
+        positionFragment(compositeEl, innerFrag, line.height, innerFrag.height);
+        lineEl.appendChild(compositeEl);
       } else if (innerFrag.kind === "box") {
         const boxEl = document.createElement("span");
         boxEl.className = "frag-box";
         boxEl.style.width = innerFrag.width + "px";
         boxEl.style.height = innerFrag.height + "px";
-        boxEl.style.marginLeft = innerFrag.leadingGap + "px";
         boxEl.style.flexShrink = "0";
+        positionFragment(boxEl, innerFrag, line.height, innerFrag.height);
         lineEl.appendChild(boxEl);
       } else {
         const spanEl = document.createElement("span");
         spanEl.className = "frag-text";
-        spanEl.style.marginLeft = innerFrag.leadingGap + "px";
         if (innerFrag.font) spanEl.style.font = innerFrag.font;
+        spanEl.style.lineHeight = line.height + "px";
         spanEl.textContent = innerFrag.text;
+        positionFragment(spanEl, innerFrag, line.height, null);
         lineEl.appendChild(spanEl);
       }
     }
@@ -1028,27 +1047,31 @@ function renderCompositeFragment(frag) {
 
 // ── Generic rich layout renderer ──
 
-function renderRichLayout(result, container, styleMap) {
+function renderRichLayout(result, container, styleMap, railWidth) {
   container.innerHTML = "";
   result.lines.forEach((line, lineIndex) => {
     const lineEl = document.createElement("div");
     lineEl.className = "render-line";
     lineEl.dataset.lineIndex = String(lineIndex);
+    lineEl.style.position = "relative";
     lineEl.style.height = line.height + "px";
     lineEl.style.lineHeight = line.height + "px";
+    lineEl.style.width = railWidth + "px";
 
     for (const frag of line.fragments) {
       if (frag.kind === "composite") {
-        lineEl.appendChild(renderCompositeFragment(frag));
+        const compositeEl = renderCompositeFragment(frag);
+        positionFragment(compositeEl, frag, line.height, frag.height);
+        lineEl.appendChild(compositeEl);
       } else if (frag.kind === "box") {
         const boxEl = document.createElement("span");
         boxEl.className = "frag-box";
         boxEl.dataset.kind = "inline-box";
         boxEl.style.width = frag.width + "px";
         boxEl.style.height = frag.height + "px";
-        boxEl.style.marginLeft = frag.leadingGap + "px";
         boxEl.style.flexShrink = "0";
         boxEl.textContent = "😊";
+        positionFragment(boxEl, frag, line.height, frag.height);
         lineEl.appendChild(boxEl);
       } else {
         const spanEl = document.createElement("span");
@@ -1056,9 +1079,10 @@ function renderRichLayout(result, container, styleMap) {
         if (style === "mention") spanEl.className = "frag-mention";
         else if (style === "code") spanEl.className = "frag-code";
         else spanEl.className = "frag-text";
-        spanEl.style.marginLeft = frag.leadingGap + "px";
         if (frag.font) spanEl.style.font = frag.font;
+        spanEl.style.lineHeight = line.height + "px";
         spanEl.textContent = frag.text;
+        positionFragment(spanEl, frag, line.height, null);
         lineEl.appendChild(spanEl);
       }
     }
@@ -1112,7 +1136,7 @@ function runDemo1() {
     const result = layoutRuns(prepared, width, LINE_HEIGHT);
     const elapsed = ((performance.now() - t0) * 1000).toFixed(0);
 
-    renderRichLayout(result, renderContent, CHAT_RUN_STYLE_MAP);
+    renderRichLayout(result, renderContent, CHAT_RUN_STYLE_MAP, width);
 
     statsArea.innerHTML = `
       <span class="stat">Lines: <strong>${result.lines.length}</strong></span>
@@ -1243,7 +1267,7 @@ function runDemo4() {
 
     const layoutWidth = 480;
     const result = layoutRuns(prepared, layoutWidth, LINE_HEIGHT);
-    renderRichLayout(result, renderContent, {});
+    renderRichLayout(result, renderContent, {}, layoutWidth);
 
     stats.innerHTML = `
       <span class="stat">Width: <strong>480px</strong></span>
@@ -1304,7 +1328,7 @@ function runDemo4() {
       renderContent.style.width = width + "px";
 
       const result = layoutRuns(prepared, width, LINE_HEIGHT);
-      renderRichLayout(result, renderContent, {});
+      renderRichLayout(result, renderContent, {}, width);
 
       stats.innerHTML = `
         <span class="stat">Width: <strong>${width}px</strong></span>
@@ -1358,7 +1382,7 @@ function runDemo4() {
 
     const layoutWidth = 500;
     const result = layoutRuns(prepared, layoutWidth, LINE_HEIGHT);
-    renderRichLayout(result, renderContent, {});
+    renderRichLayout(result, renderContent, {}, layoutWidth);
 
     stats.innerHTML = `
       <span class="stat">Width: <strong>500px</strong></span>
