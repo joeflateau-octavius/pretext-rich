@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const CHAT_WIDTHS = [240, 320, 480, 680];
+const CHAT_WIDTHS = [240, 320, 480, 510, 680];
 
 async function openDemo(page: import('@playwright/test').Page) {
   await page.goto('/docs/index.html');
@@ -14,6 +14,15 @@ async function setChatWidth(page: import('@playwright/test').Page, width: number
     input.dispatchEvent(new Event('input', { bubbles: true }));
   }, width);
   await expect(page.locator('#widthValue')).toHaveText(`${width}px`);
+}
+
+async function setTagWidth(page: import('@playwright/test').Page, width: number) {
+  await page.locator('#tagWidthSlider').evaluate((el, value) => {
+    const input = el as HTMLInputElement;
+    input.value = String(value);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }, width);
+  await expect(page.locator('#tagWidthValue')).toHaveText(`${width}px`);
 }
 
 test('no horizontal overflow in chat shell/rail across widths', async ({ page }) => {
@@ -36,11 +45,78 @@ test('no horizontal overflow in chat shell/rail across widths', async ({ page })
     expect(shellMetrics.scrollWidth).toBeLessThanOrEqual(shellMetrics.clientWidth + 1);
 
     const lineRights = await page.locator('#chatRenderContent .render-line').evaluateAll((lines) =>
-      lines.map((line) => (line as HTMLElement).getBoundingClientRect().right),
+      lines.map((line) => {
+        const lineRect = (line as HTMLElement).getBoundingClientRect();
+        const children = Array.from(line.children) as HTMLElement[];
+        const rightmostChild = children.reduce((max, child) => Math.max(max, child.getBoundingClientRect().right), lineRect.left);
+        return { lineRight: lineRect.right, rightmostChild };
+      }),
     );
 
-    for (const right of lineRights) {
-      expect(right).toBeLessThanOrEqual((railBox?.x ?? 0) + (railBox?.width ?? 0) + 1);
+    for (const { lineRight, rightmostChild } of lineRights) {
+      expect(lineRight).toBeLessThanOrEqual((railBox?.x ?? 0) + (railBox?.width ?? 0) + 1);
+      expect(rightmostChild).toBeLessThanOrEqual((railBox?.x ?? 0) + (railBox?.width ?? 0) + 1);
+    }
+  }
+});
+
+test('chat does not overflow at width 510', async ({ page }) => {
+  await openDemo(page);
+  await setChatWidth(page, 510);
+
+  const shellMetrics = await page.locator('#chatRender').evaluate((el) => ({
+    scrollWidth: el.scrollWidth,
+    clientWidth: el.clientWidth,
+  }));
+  expect(shellMetrics.scrollWidth).toBeLessThanOrEqual(shellMetrics.clientWidth + 1);
+
+  const rail = page.locator('#chatRenderContent');
+  const railMetrics = await rail.evaluate((el) => ({
+    scrollWidth: el.scrollWidth,
+    clientWidth: el.clientWidth,
+  }));
+  expect(railMetrics.scrollWidth).toBeLessThanOrEqual(railMetrics.clientWidth + 1);
+
+  const railRight = await rail.evaluate((el) => el.getBoundingClientRect().right);
+  const rightmostPerLine = await page.locator('#chatRenderContent .render-line').evaluateAll((lines) =>
+    lines.map((line) => {
+      const lineEl = line as HTMLElement;
+      const children = Array.from(lineEl.children) as HTMLElement[];
+      return children.reduce((max, child) => Math.max(max, child.getBoundingClientRect().right), lineEl.getBoundingClientRect().left);
+    }),
+  );
+
+  for (const right of rightmostPerLine) {
+    expect(right).toBeLessThanOrEqual(railRight + 1);
+  }
+});
+
+test('status tag chips do not overflow their own boxes', async ({ page }) => {
+  await openDemo(page);
+
+  for (const width of [260, 320, 420]) {
+    await setTagWidth(page, width);
+
+    const chipMetrics = await page.locator('#tagRenderContent [data-kind="tag-chip"]').evaluateAll((chips) =>
+      chips.map((chip) => {
+        const el = chip as HTMLElement;
+        const rail = el.closest('.render-content') as HTMLElement | null;
+        const chipRect = el.getBoundingClientRect();
+        const railRect = rail?.getBoundingClientRect();
+        return {
+          scrollWidth: el.scrollWidth,
+          clientWidth: el.clientWidth,
+          right: chipRect.right,
+          railRight: railRect?.right ?? Number.POSITIVE_INFINITY,
+        };
+      }),
+    );
+
+    expect(chipMetrics.length).toBeGreaterThan(0);
+
+    for (const chip of chipMetrics) {
+      expect(chip.scrollWidth).toBeLessThanOrEqual(chip.clientWidth + 1);
+      expect(chip.right).toBeLessThanOrEqual(chip.railRight + 1);
     }
   }
 });
