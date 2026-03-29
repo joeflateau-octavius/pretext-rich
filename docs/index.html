@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>pretext-rich — Rich Text Inline Layout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0e1a;
+    --bg-card: #111827;
+    --bg-card-hover: #1a2332;
+    --border: #1e2d42;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --accent: #4a9fff;
+    --accent-bright: #00e5ff;
+    --accent-glow: rgba(74, 159, 255, 0.15);
+    --code-bg: rgba(74, 159, 255, 0.12);
+    --mention-bg: rgba(0, 229, 255, 0.12);
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    line-height: 1.6;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Subtle gradient bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(74,159,255,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(0,229,255,0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ── Header ── */
+  header {
+    padding: 64px 0 48px;
+    text-align: center;
+  }
+
+  header h1 {
+    font-size: 2.8rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-bright) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+
+  header .tagline {
+    font-size: 1.15rem;
+    color: var(--text-dim);
+    max-width: 520px;
+    margin: 0 auto 24px;
+    line-height: 1.5;
+  }
+
+  header .links {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  header .links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #5eafff; transform: translateY(-1px); }
+
+  .btn-ghost {
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--text); }
+
+  /* ── Demo sections ── */
+  .demos {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    padding-bottom: 80px;
+  }
+
+  .demo-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    transition: border-color 0.2s;
+  }
+  .demo-card:hover { border-color: rgba(74,159,255,0.3); }
+
+  .demo-card h2 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .demo-card .subtitle {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-bottom: 24px;
+  }
+
+  /* Slider */
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .slider-row label {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    white-space: nowrap;
+    min-width: 110px;
+  }
+
+  input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(74,159,255,0.4);
+  }
+
+  .slider-value {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    color: var(--accent-bright);
+    min-width: 60px;
+    text-align: right;
+  }
+
+  /* Stats bar */
+  .stats {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .stat {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+
+  .stat strong {
+    color: var(--accent-bright);
+    font-family: var(--mono);
+    font-weight: 500;
+  }
+
+  /* Render area */
+  .render-area {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    min-height: 60px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .render-line {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
+  .frag-text {
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1;
+  }
+
+  .frag-mention {
+    color: var(--accent-bright);
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 1;
+    background: var(--mention-bg);
+    border-radius: 4px;
+    padding: 1px 3px;
+  }
+
+  .frag-code {
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1;
+    background: var(--code-bg);
+    border-radius: 4px;
+    padding: 2px 5px;
+    color: #93c5fd;
+  }
+
+  .frag-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background: linear-gradient(135deg, rgba(74,159,255,0.25), rgba(0,229,255,0.2));
+    border: 1px solid rgba(74,159,255,0.3);
+    font-size: 14px;
+    vertical-align: middle;
+  }
+
+  /* ── Demo 2: Resize to fit ── */
+  .fit-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .fit-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .fit-text-wrap {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 15px;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    transition: width 0.3s ease;
+  }
+
+  .fit-badge {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--accent-bright);
+    background: rgba(0,229,255,0.08);
+    border: 1px solid rgba(0,229,255,0.2);
+    border-radius: 6px;
+    padding: 4px 10px;
+    white-space: nowrap;
+    min-width: 80px;
+    text-align: center;
+  }
+
+  /* ── Demo 3: International ── */
+  .intl-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  @media (max-width: 700px) {
+    .intl-grid { grid-template-columns: 1fr; }
+  }
+
+  .intl-item {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+
+  .intl-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+
+  .intl-text {
+    font-size: 15px;
+    color: var(--text);
+    margin-bottom: 10px;
+    word-break: break-word;
+  }
+
+  .intl-stats {
+    display: flex;
+    gap: 16px;
+  }
+
+  .intl-stats .stat {
+    font-size: 0.75rem;
+  }
+
+  /* ── Loading state ── */
+  #loading {
+    text-align: center;
+    padding: 80px 0;
+    color: var(--text-dim);
+    font-size: 1rem;
+  }
+
+  .loading-spinner {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #app { display: none; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 32px 0;
+    border-top: 1px solid var(--border);
+    margin-top: 48px;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+</style>
+
+<script type="importmap">
+{
+  "imports": {
+    "@chenglou/pretext": "https://esm.sh/@chenglou/pretext@latest"
+  }
+}
+</script>
+</head>
+<body>
+  <div class="container">
+    <div id="loading">
+      <div class="loading-spinner"></div>
+      <div>Loading fonts &amp; layout engine…</div>
+    </div>
+
+    <div id="app">
+      <header>
+        <h1>pretext-rich</h1>
+        <p class="tagline">Rich text inline layout engine built on <code style="color:var(--accent-bright)">@chenglou/pretext</code>. Mixed runs, boxes, chrome widths — all measured and wrapped correctly.</p>
+        <div class="links">
+          <a href="https://github.com/joeflateau-octavius/pretext-rich" class="btn-primary">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            GitHub
+          </a>
+          <a href="https://www.npmjs.com/package/@chenglou/pretext" class="btn-ghost">@chenglou/pretext</a>
+        </div>
+      </header>
+
+      <div class="demos">
+        <!-- Demo 1: Chat Message -->
+        <div class="demo-card">
+          <h2>💬 Chat Message</h2>
+          <p class="subtitle">Mixed text runs with bold mentions, code spans, and inline boxes. Drag the slider to re-layout in real time.</p>
+
+          <div class="slider-row">
+            <label>Container width</label>
+            <input type="range" id="widthSlider" min="200" max="800" value="520" />
+            <span class="slider-value" id="widthValue">520px</span>
+          </div>
+
+          <div class="render-area" id="chatRender" style="max-width:520px"></div>
+
+          <div class="stats" id="chatStats"></div>
+        </div>
+
+        <!-- Demo 2: Resize to fit -->
+        <div class="demo-card">
+          <h2>📐 Resize to Fit</h2>
+          <p class="subtitle">Binary search for the minimum container width where each phrase fits on a single line.</p>
+          <div class="fit-grid" id="fitGrid"></div>
+        </div>
+
+        <!-- Demo 3: International text -->
+        <div class="demo-card">
+          <h2>🌍 International Text</h2>
+          <p class="subtitle">Measuring text across scripts, emoji, and mixed directions — all at 400px container width.</p>
+          <div class="intl-grid" id="intlGrid"></div>
+        </div>
+      </div>
+
+      <footer>
+        Built with <a href="https://github.com/chenglou/pretext">@chenglou/pretext</a> · 
+        <a href="https://github.com/joeflateau-octavius/pretext-rich">pretext-rich on GitHub</a>
+      </footer>
+    </div>
+  </div>
+
+<script type="module">
+import {
+  prepareWithSegments,
+  layoutNextLine,
+  walkLineRanges,
+  layout,
+  prepare
+} from "@chenglou/pretext";
+
+// ────────────────────────────────────────────────────────────
+// Inline pretext-rich library (prepare.ts + layout.ts → JS)
+// ────────────────────────────────────────────────────────────
+
+const LINE_START_CURSOR = { segmentIndex: 0, graphemeIndex: 0 };
+const UNBOUNDED_WIDTH = 100_000;
+const collapsedSpaceWidthCache = new Map();
+
+function measureSingleLineWidth(prepared) {
+  let maxWidth = 0;
+  walkLineRanges(prepared, UNBOUNDED_WIDTH, (line) => {
+    if (line.width > maxWidth) maxWidth = line.width;
+  });
+  return maxWidth;
+}
+
+function measureCollapsedSpaceWidth(font) {
+  const cached = collapsedSpaceWidthCache.get(font);
+  if (cached !== undefined) return cached;
+  const joinedWidth = measureSingleLineWidth(prepareWithSegments("A A", font));
+  const compactWidth = measureSingleLineWidth(prepareWithSegments("AA", font));
+  const collapsedWidth = Math.max(0, joinedWidth - compactWidth);
+  collapsedSpaceWidthCache.set(font, collapsedWidth);
+  return collapsedWidth;
+}
+
+function prepareRuns(runs) {
+  const items = [];
+  let pendingGap = 0;
+  let defaultFont = null;
+  for (const run of runs) {
+    if (run.kind === "text") { defaultFont = run.font; break; }
+  }
+
+  for (let index = 0; index < runs.length; index++) {
+    const run = runs[index];
+    switch (run.kind) {
+      case "box": {
+        const height = run.height ?? 0;
+        items.push({ kind: "box", runIndex: index, leadingGap: pendingGap, width: run.width, height });
+        pendingGap = 0;
+        break;
+      }
+      case "text": {
+        const carryGap = pendingGap;
+        const hasLeadingWhitespace = /^\s/.test(run.text);
+        const hasTrailingWhitespace = /\s$/.test(run.text);
+        const trimmedText = run.text.trim();
+        const inlineBoundaryGap = measureCollapsedSpaceWidth(run.font);
+        pendingGap = hasTrailingWhitespace ? inlineBoundaryGap : 0;
+        if (trimmedText.length === 0) break;
+
+        const chromeWidth = run.chromeWidth ?? 0;
+        const prepared = prepareWithSegments(trimmedText, run.font);
+        const wholeLine = layoutNextLine(prepared, LINE_START_CURSOR, UNBOUNDED_WIDTH);
+        if (wholeLine === null) break;
+
+        const leadingGap = (carryGap > 0 || hasLeadingWhitespace) ? inlineBoundaryGap : 0;
+        items.push({
+          kind: "text", runIndex: index, font: run.font, chromeWidth,
+          endCursor: wholeLine.end, fullText: wholeLine.text,
+          fullWidth: wholeLine.width, leadingGap, prepared,
+        });
+        break;
+      }
+    }
+  }
+  return { _items: items };
+}
+
+function cursorsMatch(a, b) {
+  return a.segmentIndex === b.segmentIndex && a.graphemeIndex === b.graphemeIndex;
+}
+
+function layoutRuns(prepared, containerWidth, lineHeight) {
+  const items = prepared._items;
+  const lines = [];
+  const safeWidth = Math.max(1, containerWidth);
+  let itemIndex = 0;
+  let textCursor = null;
+
+  while (itemIndex < items.length) {
+    const fragments = [];
+    let lineWidth = 0;
+    let remainingWidth = safeWidth;
+    let maxBoxHeight = 0;
+    let broke = false;
+
+    while (itemIndex < items.length) {
+      const item = items[itemIndex];
+      if (item.kind === "box") {
+        const leadingGap = fragments.length === 0 ? 0 : item.leadingGap;
+        const totalWidth = leadingGap + item.width;
+        if (fragments.length > 0 && totalWidth > remainingWidth) { broke = true; break; }
+        if (item.height > maxBoxHeight) maxBoxHeight = item.height;
+        fragments.push({ kind: "box", runIndex: item.runIndex, leadingGap, x: lineWidth, width: item.width, height: item.height });
+        lineWidth += totalWidth;
+        remainingWidth = Math.max(0, safeWidth - lineWidth);
+        itemIndex++;
+        textCursor = null;
+        continue;
+      }
+
+      // text
+      if (textCursor !== null && cursorsMatch(textCursor, item.endCursor)) {
+        itemIndex++;
+        textCursor = null;
+        continue;
+      }
+
+      const leadingGap = fragments.length === 0 ? 0 : item.leadingGap;
+      const reservedWidth = leadingGap + item.chromeWidth;
+      if (fragments.length > 0 && reservedWidth >= remainingWidth) { broke = true; break; }
+
+      // Fast path
+      if (textCursor === null) {
+        const fullWidth = leadingGap + item.fullWidth + item.chromeWidth;
+        if (fullWidth <= remainingWidth) {
+          fragments.push({ kind: "text", text: item.fullText, font: item.font, leadingGap, x: lineWidth, runIndex: item.runIndex });
+          lineWidth += fullWidth;
+          remainingWidth = Math.max(0, safeWidth - lineWidth);
+          itemIndex++;
+          continue;
+        }
+      }
+
+      // Slow path
+      const startCursor = textCursor ?? LINE_START_CURSOR;
+      const line = layoutNextLine(item.prepared, startCursor, Math.max(1, remainingWidth - reservedWidth));
+      if (line === null) { itemIndex++; textCursor = null; continue; }
+      if (cursorsMatch(startCursor, line.end)) { itemIndex++; textCursor = null; continue; }
+
+      fragments.push({ kind: "text", text: line.text, font: item.font, leadingGap, x: lineWidth, runIndex: item.runIndex });
+      lineWidth += leadingGap + line.width + item.chromeWidth;
+      remainingWidth = Math.max(0, safeWidth - lineWidth);
+
+      if (cursorsMatch(line.end, item.endCursor)) {
+        itemIndex++;
+        textCursor = null;
+        continue;
+      }
+      textCursor = line.end;
+      break;
+    }
+
+    if (fragments.length === 0) break;
+    lines.push({ fragments, height: Math.max(lineHeight, maxBoxHeight) });
+  }
+
+  let totalHeight = 0;
+  for (const line of lines) totalHeight += line.height;
+  return { lines, totalHeight };
+}
+
+// ────────────────────────────────────────────────────────────
+// Demo code
+// ────────────────────────────────────────────────────────────
+
+const BODY_FONT = "15px Inter";
+const BOLD_FONT = "bold 15px Inter";
+const CODE_FONT = "13px JetBrains Mono";
+const LINE_HEIGHT = 22;
+
+// The run style map: runIndex → style class
+const RUN_STYLES = {};  // will fill per-demo
+
+// ── Demo 1: Chat Message ──
+
+function buildChatRuns() {
+  return [
+    { kind: "text", text: "Hey everyone, ", font: BODY_FONT },
+    { kind: "text", text: "@Sarah ", font: BOLD_FONT, chromeWidth: 8 },
+    { kind: "text", text: "can you check the ", font: BODY_FONT },
+    { kind: "text", text: "config.yaml ", font: CODE_FONT, chromeWidth: 12 },
+    { kind: "text", text: "file? ", font: BODY_FONT },
+    { kind: "box", width: 24, height: 24 },
+    { kind: "text", text: " Also the deployment pipeline needs a review before Friday.", font: BODY_FONT },
+  ];
+}
+
+// Map run indices to style types
+const CHAT_RUN_STYLE_MAP = {
+  1: "mention",   // @Sarah
+  3: "code",      // config.yaml
+  5: "box",       // emoji box
+};
+
+function renderChatLayout(result, container, styleMap) {
+  container.innerHTML = "";
+  for (const line of result.lines) {
+    const lineEl = document.createElement("div");
+    lineEl.className = "render-line";
+    lineEl.style.height = line.height + "px";
+    lineEl.style.lineHeight = line.height + "px";
+
+    for (const frag of line.fragments) {
+      if (frag.kind === "box") {
+        const boxEl = document.createElement("span");
+        boxEl.className = "frag-box";
+        boxEl.style.width = frag.width + "px";
+        boxEl.style.height = frag.height + "px";
+        boxEl.style.marginLeft = frag.leadingGap + "px";
+        boxEl.textContent = "😊";
+        lineEl.appendChild(boxEl);
+      } else {
+        const spanEl = document.createElement("span");
+        const style = styleMap[frag.runIndex];
+        if (style === "mention") spanEl.className = "frag-mention";
+        else if (style === "code") spanEl.className = "frag-code";
+        else spanEl.className = "frag-text";
+        spanEl.style.marginLeft = frag.leadingGap + "px";
+        spanEl.textContent = frag.text;
+        lineEl.appendChild(spanEl);
+      }
+    }
+    container.appendChild(lineEl);
+  }
+}
+
+function runDemo1() {
+  const slider = document.getElementById("widthSlider");
+  const valueLabel = document.getElementById("widthValue");
+  const renderArea = document.getElementById("chatRender");
+  const statsArea = document.getElementById("chatStats");
+
+  const runs = buildChatRuns();
+  const prepared = prepareRuns(runs);
+
+  function update() {
+    const width = parseInt(slider.value);
+    valueLabel.textContent = width + "px";
+    renderArea.style.maxWidth = width + "px";
+
+    const t0 = performance.now();
+    const result = layoutRuns(prepared, width, LINE_HEIGHT);
+    const elapsed = ((performance.now() - t0) * 1000).toFixed(0);
+
+    renderChatLayout(result, renderArea, CHAT_RUN_STYLE_MAP);
+
+    statsArea.innerHTML = `
+      <span class="stat">Lines: <strong>${result.lines.length}</strong></span>
+      <span class="stat">Height: <strong>${result.totalHeight}px</strong></span>
+      <span class="stat">Layout: <strong>${elapsed}µs</strong></span>
+    `;
+  }
+
+  slider.addEventListener("input", update);
+  update();
+}
+
+// ── Demo 2: Resize to Fit ──
+
+function findMinWidth(text, font, lineHeight) {
+  const prepared = prepareWithSegments(text, font);
+
+  // Get natural single-line width as upper bound
+  let upper = 0;
+  walkLineRanges(prepared, UNBOUNDED_WIDTH, (line) => {
+    upper = Math.max(upper, line.width);
+  });
+  upper = Math.ceil(upper) + 1;
+
+  // Binary search for minimum width that still fits on 1 line
+  let lower = 1;
+  while (lower < upper) {
+    const mid = Math.floor((lower + upper) / 2);
+    let lineCount = 0;
+    walkLineRanges(prepared, mid, () => { lineCount++; });
+    if (lineCount <= 1) {
+      upper = mid;
+    } else {
+      lower = mid + 1;
+    }
+  }
+  return upper;
+}
+
+function runDemo2() {
+  const grid = document.getElementById("fitGrid");
+  const phrases = [
+    "The quick brown fox jumps over the lazy dog",
+    "Inline layout made simple",
+    "pretext-rich: measure, wrap, render",
+    "Hello, World! 🌍✨"
+  ];
+
+  for (const phrase of phrases) {
+    const minW = findMinWidth(phrase, BODY_FONT, LINE_HEIGHT);
+
+    const row = document.createElement("div");
+    row.className = "fit-row";
+
+    const textWrap = document.createElement("div");
+    textWrap.className = "fit-text-wrap";
+    textWrap.style.width = minW + "px";
+    textWrap.textContent = phrase;
+
+    const badge = document.createElement("span");
+    badge.className = "fit-badge";
+    badge.textContent = minW + "px";
+
+    row.appendChild(textWrap);
+    row.appendChild(badge);
+    grid.appendChild(row);
+  }
+}
+
+// ── Demo 3: International Text ──
+
+function runDemo3() {
+  const grid = document.getElementById("intlGrid");
+  const WIDTH = 400;
+
+  const samples = [
+    { label: "English", text: "Typography is the art and technique of arranging type to make written language legible and appealing." },
+    { label: "Arabic (RTL)", text: "الطباعة هي فن وتقنية ترتيب الحروف لجعل اللغة المكتوبة مقروءة وجذابة." },
+    { label: "Chinese", text: "排版是安排文字使书面语言易读且美观的艺术和技术。这是一段测试中文文本。" },
+    { label: "Japanese", text: "タイポグラフィは、書かれた言語を読みやすく魅力的にするために活字を配置する芸術と技術です。" },
+    { label: "Emoji", text: "🎨🖋️📝✨🌈🎭🎪🎯🚀💡🔮🎵🌊🌸🍃⭐🦋🌙☀️🌍" },
+    { label: "Mixed", text: "Hello 你好 مرحبا こんにちは 🌍 Bonjour Привет 안녕하세요" },
+  ];
+
+  for (const sample of samples) {
+    const prepared = prepareWithSegments(sample.text, BODY_FONT);
+    const result = layout(prepared, WIDTH, LINE_HEIGHT);
+
+    const item = document.createElement("div");
+    item.className = "intl-item";
+
+    item.innerHTML = `
+      <div class="intl-label">${sample.label}</div>
+      <div class="intl-text">${escapeHtml(sample.text)}</div>
+      <div class="intl-stats">
+        <span class="stat">Lines: <strong>${result.lineCount}</strong></span>
+        <span class="stat">Height: <strong>${result.height}px</strong></span>
+      </div>
+    `;
+
+    grid.appendChild(item);
+  }
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// ── Init ──
+
+async function init() {
+  await document.fonts.ready;
+
+  runDemo1();
+  runDemo2();
+  runDemo3();
+
+  document.getElementById("loading").style.display = "none";
+  document.getElementById("app").style.display = "block";
+}
+
+init().catch(err => {
+  console.error("Init failed:", err);
+  document.getElementById("loading").innerHTML =
+    `<div style="color:#f87171">Failed to load: ${escapeHtml(err.message)}</div>`;
+});
+</script>
+</body>
+</html>

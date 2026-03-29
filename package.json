@@ -1,0 +1,23 @@
+{
+  "name": "pretext-rich",
+  "version": "1.0.0",
+  "description": "Rich text inline layout engine built on @chenglou/pretext",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit"
+  },
+  "keywords": [
+    "layout",
+    "text",
+    "rich-text",
+    "inline"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@chenglou/pretext": "^0.0.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
