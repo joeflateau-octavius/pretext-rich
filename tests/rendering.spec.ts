@@ -91,6 +91,45 @@ test('chat does not overflow at width 510', async ({ page }) => {
   }
 });
 
+test('nested status tag chips respect allocated composite width and rail bounds', async ({ page }) => {
+  await openDemo(page);
+
+  for (const width of [260, 320, 420, 510]) {
+    await setTagWidth(page, width);
+
+    const chipMetrics = await page.locator('#tagRenderContent [data-kind="tag-chip"]').evaluateAll((chips) =>
+      chips.map((chip) => {
+        const el = chip as HTMLElement;
+        const rail = el.closest('.render-content') as HTMLElement;
+        const line = el.closest('.render-line') as HTMLElement;
+        const rect = el.getBoundingClientRect();
+        const railRect = rail.getBoundingClientRect();
+        const lineRect = line.getBoundingClientRect();
+        const expectedOuterWidth = parseFloat(el.dataset.expectedOuterWidth || '0');
+        const renderedOuterWidth = rect.width;
+        return {
+          clientWidth: el.clientWidth,
+          scrollWidth: el.scrollWidth,
+          right: rect.right,
+          railRight: railRect.right,
+          lineRight: lineRect.right,
+          renderedOuterWidth,
+          expectedOuterWidth,
+        };
+      }),
+    );
+
+    expect(chipMetrics.length).toBeGreaterThan(0);
+
+    for (const chip of chipMetrics) {
+      expect(chip.scrollWidth).toBeLessThanOrEqual(chip.clientWidth + 1);
+      expect(chip.right).toBeLessThanOrEqual(chip.railRight + 1);
+      expect(chip.right).toBeLessThanOrEqual(chip.lineRight + 1);
+      expect(chip.renderedOuterWidth).toBeCloseTo(chip.expectedOuterWidth, 1);
+    }
+  }
+});
+
 test('status tag chips do not overflow their own boxes', async ({ page }) => {
   await openDemo(page);
 
