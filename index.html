@@ -212,12 +212,12 @@
     padding: 16px;
     min-height: 60px;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .render-line {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     flex-wrap: nowrap;
     white-space: nowrap;
   }
@@ -235,7 +235,7 @@
     line-height: 1;
     background: var(--mention-bg);
     border-radius: 4px;
-    padding: 1px 3px;
+    padding: 0 4px;
   }
 
   .frag-code {
@@ -244,7 +244,7 @@
     line-height: 1;
     background: var(--code-bg);
     border-radius: 4px;
-    padding: 2px 5px;
+    padding: 0 6px;
     color: #93c5fd;
   }
 
@@ -280,8 +280,8 @@
     font-size: 15px;
     color: var(--text);
     white-space: nowrap;
-    overflow: hidden;
-    transition: width 0.3s ease;
+    overflow: visible;
+    width: auto;
   }
 
   .fit-badge {
@@ -613,7 +613,7 @@ function layoutRuns(prepared, containerWidth, lineHeight) {
 const BODY_FONT = "15px Inter";
 const BOLD_FONT = "bold 15px Inter";
 const CODE_FONT = "13px JetBrains Mono";
-const LINE_HEIGHT = 22;
+const LINE_HEIGHT = 28;
 
 // The run style map: runIndex → style class
 const RUN_STYLES = {};  // will fill per-demo
@@ -663,6 +663,7 @@ function renderChatLayout(result, container, styleMap) {
         else if (style === "code") spanEl.className = "frag-code";
         else spanEl.className = "frag-text";
         spanEl.style.marginLeft = frag.leadingGap + "px";
+        if (frag.font) spanEl.style.font = frag.font;
         spanEl.textContent = frag.text;
         lineEl.appendChild(spanEl);
       }
@@ -746,7 +747,6 @@ function runDemo2() {
 
     const textWrap = document.createElement("div");
     textWrap.className = "fit-text-wrap";
-    textWrap.style.width = minW + "px";
     textWrap.textContent = phrase;
 
     const badge = document.createElement("span");
