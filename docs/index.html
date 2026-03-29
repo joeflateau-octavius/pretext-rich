@@ -35,7 +35,6 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Subtle gradient bg */
   body::before {
     content: '';
     position: fixed;
@@ -259,6 +258,83 @@
     vertical-align: middle;
   }
 
+  /* ── Chip styles ── */
+  .chip-mention {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(0, 229, 255, 0.15);
+    border-radius: 12px;
+    padding: 2px 6px 2px 3px;
+    vertical-align: middle;
+    line-height: 1;
+  }
+
+  .chip-mention .avatar-circle {
+    flex-shrink: 0;
+  }
+
+  .chip-mention .chip-mention-text {
+    color: var(--accent-bright);
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .chip-tag {
+    display: inline-flex;
+    align-items: center;
+    background: var(--code-bg);
+    border-radius: 10px;
+    padding: 2px 8px;
+    vertical-align: middle;
+    line-height: 1;
+  }
+
+  .chip-tag-text {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: #93c5fd;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .chip-quote {
+    display: inline-block;
+    background: rgba(74, 159, 255, 0.06);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 8px 12px;
+    vertical-align: top;
+    line-height: 1;
+  }
+
+  .chip-quote .quote-inner-line {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
+  .chip-quote .quote-inner-line .frag-text {
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  .avatar-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4a9fff, #00e5ff);
+    color: #fff;
+    font-weight: 700;
+    font-size: 10px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
   /* ── Demo 2: Resize to fit ── */
   .fit-grid {
     display: flex;
@@ -342,6 +418,33 @@
     font-size: 0.75rem;
   }
 
+  /* ── Demo 4: Nested layout examples ── */
+  .nested-examples {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .nested-example {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  .nested-example h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  .nested-example .example-desc {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+
   /* ── Loading state ── */
   #loading {
     text-align: center;
@@ -396,7 +499,7 @@
     <div id="app">
       <header>
         <h1>pretext-rich</h1>
-        <p class="tagline">Rich text inline layout engine built on <code style="color:var(--accent-bright)">@chenglou/pretext</code>. Mixed runs, boxes, chrome widths — all measured and wrapped correctly.</p>
+        <p class="tagline">Rich text inline layout engine built on <code style="color:var(--accent-bright)">@chenglou/pretext</code>. Mixed runs, composites, boxes, chrome widths — all measured and wrapped correctly.</p>
         <div class="links">
           <a href="https://github.com/joeflateau-octavius/pretext-rich" class="btn-primary">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
@@ -410,7 +513,7 @@
         <!-- Demo 1: Chat Message -->
         <div class="demo-card">
           <h2>💬 Chat Message</h2>
-          <p class="subtitle">Mixed text runs with bold mentions, code spans, and inline boxes. Drag the slider to re-layout in real time.</p>
+          <p class="subtitle">Mixed text runs with mention chips (composite), code spans, and inline boxes. Drag the slider to re-layout in real time.</p>
 
           <div class="slider-row">
             <label>Container width</label>
@@ -436,6 +539,13 @@
           <p class="subtitle">Measuring text across scripts, emoji, and mixed directions — all at 400px container width.</p>
           <div class="intl-grid" id="intlGrid"></div>
         </div>
+
+        <!-- Demo 4: Nested Layout -->
+        <div class="demo-card">
+          <h2>🧩 Nested Layout</h2>
+          <p class="subtitle">Composites: inline paragraphs within paragraphs</p>
+          <div class="nested-examples" id="nestedExamples"></div>
+        </div>
       </div>
 
       <footer>
@@ -456,10 +566,12 @@ import {
 
 // ────────────────────────────────────────────────────────────
 // Inline pretext-rich library (prepare.ts + layout.ts → JS)
+// with full composite support
 // ────────────────────────────────────────────────────────────
 
 const LINE_START_CURSOR = { segmentIndex: 0, graphemeIndex: 0 };
 const UNBOUNDED_WIDTH = 100_000;
+const DEFAULT_INNER_LINE_HEIGHT = 20;
 const collapsedSpaceWidthCache = new Map();
 
 function measureSingleLineWidth(prepared) {
@@ -480,6 +592,18 @@ function measureCollapsedSpaceWidth(font) {
   return collapsedWidth;
 }
 
+function computeNaturalWidth(items) {
+  let totalWidth = 0;
+  for (const item of items) {
+    const gap = totalWidth > 0 ? item.leadingGap : 0;
+    const itemWidth = item.kind === "text"
+      ? item.fullWidth + item.chromeWidth
+      : item.width;
+    totalWidth += gap + itemWidth;
+  }
+  return totalWidth;
+}
+
 function prepareRuns(runs) {
   const items = [];
   let pendingGap = 0;
@@ -493,7 +617,51 @@ function prepareRuns(runs) {
     switch (run.kind) {
       case "box": {
         const height = run.height ?? 0;
-        items.push({ kind: "box", runIndex: index, leadingGap: pendingGap, width: run.width, height });
+        const marginLeft = run.marginLeft ?? 0;
+        const marginRight = run.marginRight ?? 0;
+        items.push({
+          kind: "box",
+          runIndex: index,
+          leadingGap: pendingGap,
+          width: run.width + marginLeft + marginRight,
+          contentWidth: run.width,
+          height,
+          marginLeft,
+          marginRight,
+        });
+        pendingGap = 0;
+        break;
+      }
+      case "composite": {
+        const chromeWidth = run.chromeWidth ?? 0;
+        const chromeHeight = run.chromeHeight ?? 0;
+        const marginLeft = run.marginLeft ?? 0;
+        const marginRight = run.marginRight ?? 0;
+
+        const innerPrepared = prepareRuns(run.runs);
+        const naturalWidth = computeNaturalWidth(innerPrepared._items);
+        const innerWidth = run.maxWidth !== undefined
+          ? Math.min(naturalWidth, run.maxWidth)
+          : naturalWidth;
+
+        const innerLayout = layoutRuns(innerPrepared, innerWidth, DEFAULT_INNER_LINE_HEIGHT);
+
+        const totalWidth = innerWidth + chromeWidth + marginLeft + marginRight;
+        const totalHeight = innerLayout.totalHeight + chromeHeight;
+
+        items.push({
+          kind: "composite",
+          runIndex: index,
+          leadingGap: pendingGap,
+          width: totalWidth,
+          height: totalHeight,
+          innerWidth,
+          innerLayout,
+          chromeWidth,
+          chromeHeight,
+          marginLeft,
+          marginRight,
+        });
         pendingGap = 0;
         break;
       }
@@ -540,63 +708,97 @@ function layoutRuns(prepared, containerWidth, lineHeight) {
     let lineWidth = 0;
     let remainingWidth = safeWidth;
     let maxBoxHeight = 0;
-    let broke = false;
 
-    while (itemIndex < items.length) {
+    lineLoop: while (itemIndex < items.length) {
       const item = items[itemIndex];
-      if (item.kind === "box") {
-        const leadingGap = fragments.length === 0 ? 0 : item.leadingGap;
-        const totalWidth = leadingGap + item.width;
-        if (fragments.length > 0 && totalWidth > remainingWidth) { broke = true; break; }
-        if (item.height > maxBoxHeight) maxBoxHeight = item.height;
-        fragments.push({ kind: "box", runIndex: item.runIndex, leadingGap, x: lineWidth, width: item.width, height: item.height });
-        lineWidth += totalWidth;
-        remainingWidth = Math.max(0, safeWidth - lineWidth);
-        itemIndex++;
-        textCursor = null;
-        continue;
-      }
 
-      // text
-      if (textCursor !== null && cursorsMatch(textCursor, item.endCursor)) {
-        itemIndex++;
-        textCursor = null;
-        continue;
-      }
-
-      const leadingGap = fragments.length === 0 ? 0 : item.leadingGap;
-      const reservedWidth = leadingGap + item.chromeWidth;
-      if (fragments.length > 0 && reservedWidth >= remainingWidth) { broke = true; break; }
-
-      // Fast path
-      if (textCursor === null) {
-        const fullWidth = leadingGap + item.fullWidth + item.chromeWidth;
-        if (fullWidth <= remainingWidth) {
-          fragments.push({ kind: "text", text: item.fullText, font: item.font, leadingGap, x: lineWidth, runIndex: item.runIndex });
-          lineWidth += fullWidth;
+      switch (item.kind) {
+        case "box": {
+          const leadingGap = fragments.length === 0 ? 0 : item.leadingGap;
+          const totalWidth = leadingGap + item.width;
+          if (fragments.length > 0 && totalWidth > remainingWidth) break lineLoop;
+          if (item.height > maxBoxHeight) maxBoxHeight = item.height;
+          fragments.push({
+            kind: "box",
+            runIndex: item.runIndex,
+            leadingGap,
+            x: lineWidth,
+            width: item.contentWidth,
+            height: item.height,
+          });
+          lineWidth += totalWidth;
           remainingWidth = Math.max(0, safeWidth - lineWidth);
           itemIndex++;
+          textCursor = null;
           continue;
         }
+
+        case "composite": {
+          const leadingGap = fragments.length === 0 ? 0 : item.leadingGap;
+          const totalWidth = leadingGap + item.width;
+          if (fragments.length > 0 && totalWidth > remainingWidth) break lineLoop;
+          if (item.height > maxBoxHeight) maxBoxHeight = item.height;
+          fragments.push({
+            kind: "composite",
+            runIndex: item.runIndex,
+            leadingGap,
+            x: lineWidth,
+            width: item.width,
+            height: item.height,
+            innerWidth: item.innerWidth,
+            innerLayout: item.innerLayout,
+            chromeWidth: item.chromeWidth,
+            chromeHeight: item.chromeHeight,
+            marginLeft: item.marginLeft,
+            marginRight: item.marginRight,
+          });
+          lineWidth += totalWidth;
+          remainingWidth = Math.max(0, safeWidth - lineWidth);
+          itemIndex++;
+          textCursor = null;
+          continue;
+        }
+
+        case "text": {
+          if (textCursor !== null && cursorsMatch(textCursor, item.endCursor)) {
+            itemIndex++;
+            textCursor = null;
+            continue;
+          }
+
+          const leadingGap = fragments.length === 0 ? 0 : item.leadingGap;
+          const reservedWidth = leadingGap + item.chromeWidth;
+          if (fragments.length > 0 && reservedWidth >= remainingWidth) break lineLoop;
+
+          if (textCursor === null) {
+            const fullWidth = leadingGap + item.fullWidth + item.chromeWidth;
+            if (fullWidth <= remainingWidth) {
+              fragments.push({ kind: "text", text: item.fullText, font: item.font, leadingGap, x: lineWidth, runIndex: item.runIndex });
+              lineWidth += fullWidth;
+              remainingWidth = Math.max(0, safeWidth - lineWidth);
+              itemIndex++;
+              continue;
+            }
+          }
+
+          const startCursor = textCursor ?? LINE_START_CURSOR;
+          const line = layoutNextLine(item.prepared, startCursor, Math.max(1, remainingWidth - reservedWidth));
+          if (line === null) { itemIndex++; textCursor = null; continue; }
+          if (cursorsMatch(startCursor, line.end)) { itemIndex++; textCursor = null; continue; }
+
+          fragments.push({ kind: "text", text: line.text, font: item.font, leadingGap, x: lineWidth, runIndex: item.runIndex });
+          lineWidth += leadingGap + line.width + item.chromeWidth;
+          remainingWidth = Math.max(0, safeWidth - lineWidth);
+
+          if (cursorsMatch(line.end, item.endCursor)) {
+            itemIndex++;
+            textCursor = null;
+            continue;
+          }
+          textCursor = line.end;
+          break lineLoop;
+        }
       }
-
-      // Slow path
-      const startCursor = textCursor ?? LINE_START_CURSOR;
-      const line = layoutNextLine(item.prepared, startCursor, Math.max(1, remainingWidth - reservedWidth));
-      if (line === null) { itemIndex++; textCursor = null; continue; }
-      if (cursorsMatch(startCursor, line.end)) { itemIndex++; textCursor = null; continue; }
-
-      fragments.push({ kind: "text", text: line.text, font: item.font, leadingGap, x: lineWidth, runIndex: item.runIndex });
-      lineWidth += leadingGap + line.width + item.chromeWidth;
-      remainingWidth = Math.max(0, safeWidth - lineWidth);
-
-      if (cursorsMatch(line.end, item.endCursor)) {
-        itemIndex++;
-        textCursor = null;
-        continue;
-      }
-      textCursor = line.end;
-      break;
     }
 
     if (fragments.length === 0) break;
@@ -609,6 +811,34 @@ function layoutRuns(prepared, containerWidth, lineHeight) {
 }
 
 // ────────────────────────────────────────────────────────────
+// Helpers (mirrors helpers.ts)
+// ────────────────────────────────────────────────────────────
+
+function makeMentionChip(name, font, options) {
+  const avatarWidth = options?.avatarWidth ?? 20;
+  return {
+    kind: "composite",
+    runs: [
+      { kind: "box", width: avatarWidth, height: avatarWidth },
+      { kind: "text", text: name, font },
+    ],
+    chromeWidth: options?.chromeWidth ?? 10,
+    marginLeft: options?.marginLeft ?? 2,
+    marginRight: options?.marginRight ?? 2,
+  };
+}
+
+function makeChip(text, font, options) {
+  return {
+    kind: "composite",
+    runs: [{ kind: "text", text, font }],
+    chromeWidth: options?.chromeWidth ?? 8,
+    marginLeft: options?.marginLeft ?? 0,
+    marginRight: options?.marginRight ?? 0,
+  };
+}
+
+// ────────────────────────────────────────────────────────────
 // Demo code
 // ────────────────────────────────────────────────────────────
 
@@ -617,31 +847,124 @@ const BOLD_FONT = "bold 15px Inter";
 const CODE_FONT = "13px JetBrains Mono";
 const LINE_HEIGHT = 28;
 
-// The run style map: runIndex → style class
-const RUN_STYLES = {};  // will fill per-demo
+// ── Composite renderer ──
 
-// ── Demo 1: Chat Message ──
-
-function buildChatRuns() {
-  return [
-    { kind: "text", text: "Hey everyone, ", font: BODY_FONT },
-    { kind: "text", text: "@Sarah ", font: BOLD_FONT, chromeWidth: 8 },
-    { kind: "text", text: "can you check the ", font: BODY_FONT },
-    { kind: "text", text: "config.yaml ", font: CODE_FONT, chromeWidth: 12 },
-    { kind: "text", text: "file? ", font: BODY_FONT },
-    { kind: "box", width: 24, height: 24 },
-    { kind: "text", text: " Also the deployment pipeline needs a review before Friday.", font: BODY_FONT },
-  ];
+/**
+ * Detects whether a composite fragment is a "mention chip" pattern:
+ * innerLayout has exactly 1 line with a box fragment + text fragment.
+ */
+function isMentionChip(frag) {
+  const il = frag.innerLayout;
+  if (il.lines.length !== 1) return false;
+  const frags = il.lines[0].fragments;
+  return frags.length === 2 && frags[0].kind === "box" && frags[1].kind === "text";
 }
 
-// Map run indices to style types
-const CHAT_RUN_STYLE_MAP = {
-  1: "mention",   // @Sarah
-  3: "code",      // config.yaml
-  5: "box",       // emoji box
-};
+/**
+ * Detects whether a composite fragment is a simple "tag chip" pattern:
+ * innerLayout has exactly 1 line with a single text fragment, and no chromeHeight.
+ */
+function isTagChip(frag) {
+  const il = frag.innerLayout;
+  if (il.lines.length !== 1) return false;
+  const frags = il.lines[0].fragments;
+  return frags.length === 1 && frags[0].kind === "text" && (frag.chromeHeight ?? 0) === 0;
+}
 
-function renderChatLayout(result, container, styleMap) {
+/**
+ * Get initial letter(s) from a mention name for the avatar.
+ */
+function getInitials(name) {
+  const clean = name.replace(/^@/, "").trim();
+  const parts = clean.split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return clean[0]?.toUpperCase() ?? "?";
+}
+
+/**
+ * Render a composite fragment into a DOM element.
+ */
+function renderCompositeFragment(frag) {
+  if (isMentionChip(frag)) {
+    const innerFrags = frag.innerLayout.lines[0].fragments;
+    const boxFrag = innerFrags[0];
+    const textFrag = innerFrags[1];
+
+    const pill = document.createElement("span");
+    pill.className = "chip-mention";
+    pill.style.marginLeft = frag.leadingGap + "px";
+
+    const avatar = document.createElement("span");
+    avatar.className = "avatar-circle";
+    avatar.style.width = boxFrag.width + "px";
+    avatar.style.height = boxFrag.height + "px";
+    avatar.style.fontSize = Math.round(boxFrag.width * 0.5) + "px";
+    avatar.textContent = getInitials(textFrag.text);
+
+    const label = document.createElement("span");
+    label.className = "chip-mention-text";
+    label.style.font = textFrag.font;
+    label.textContent = textFrag.text;
+
+    pill.appendChild(avatar);
+    pill.appendChild(label);
+    return pill;
+  }
+
+  if (isTagChip(frag)) {
+    const textFrag = frag.innerLayout.lines[0].fragments[0];
+
+    const pill = document.createElement("span");
+    pill.className = "chip-tag";
+    pill.style.marginLeft = frag.leadingGap + "px";
+
+    const label = document.createElement("span");
+    label.className = "chip-tag-text";
+    label.textContent = textFrag.text;
+
+    pill.appendChild(label);
+    return pill;
+  }
+
+  // Generic composite / quote block: render with recursive inner layout
+  const wrapper = document.createElement("span");
+  wrapper.className = "chip-quote";
+  wrapper.style.marginLeft = frag.leadingGap + "px";
+
+  const il = frag.innerLayout;
+  for (const line of il.lines) {
+    const lineEl = document.createElement("div");
+    lineEl.className = "quote-inner-line";
+    lineEl.style.height = line.height + "px";
+    lineEl.style.lineHeight = line.height + "px";
+
+    for (const innerFrag of line.fragments) {
+      if (innerFrag.kind === "composite") {
+        lineEl.appendChild(renderCompositeFragment(innerFrag));
+      } else if (innerFrag.kind === "box") {
+        const boxEl = document.createElement("span");
+        boxEl.className = "frag-box";
+        boxEl.style.width = innerFrag.width + "px";
+        boxEl.style.height = innerFrag.height + "px";
+        boxEl.style.marginLeft = innerFrag.leadingGap + "px";
+        lineEl.appendChild(boxEl);
+      } else {
+        const spanEl = document.createElement("span");
+        spanEl.className = "frag-text";
+        spanEl.style.marginLeft = innerFrag.leadingGap + "px";
+        if (innerFrag.font) spanEl.style.font = innerFrag.font;
+        spanEl.textContent = innerFrag.text;
+        lineEl.appendChild(spanEl);
+      }
+    }
+    wrapper.appendChild(lineEl);
+  }
+  return wrapper;
+}
+
+// ── Generic rich layout renderer ──
+
+function renderRichLayout(result, container, styleMap) {
   container.innerHTML = "";
   for (const line of result.lines) {
     const lineEl = document.createElement("div");
@@ -650,7 +973,9 @@ function renderChatLayout(result, container, styleMap) {
     lineEl.style.lineHeight = line.height + "px";
 
     for (const frag of line.fragments) {
-      if (frag.kind === "box") {
+      if (frag.kind === "composite") {
+        lineEl.appendChild(renderCompositeFragment(frag));
+      } else if (frag.kind === "box") {
         const boxEl = document.createElement("span");
         boxEl.className = "frag-box";
         boxEl.style.width = frag.width + "px";
@@ -660,7 +985,7 @@ function renderChatLayout(result, container, styleMap) {
         lineEl.appendChild(boxEl);
       } else {
         const spanEl = document.createElement("span");
-        const style = styleMap[frag.runIndex];
+        const style = styleMap ? styleMap[frag.runIndex] : null;
         if (style === "mention") spanEl.className = "frag-mention";
         else if (style === "code") spanEl.className = "frag-code";
         else spanEl.className = "frag-text";
@@ -673,6 +998,25 @@ function renderChatLayout(result, container, styleMap) {
     container.appendChild(lineEl);
   }
 }
+
+// ── Demo 1: Chat Message ──
+
+function buildChatRuns() {
+  return [
+    { kind: "text", text: "Hey everyone, ", font: BODY_FONT },
+    makeMentionChip("@Sarah", BOLD_FONT, { avatarWidth: 20, chromeWidth: 10 }),
+    { kind: "text", text: " can you check the ", font: BODY_FONT },
+    { kind: "text", text: "config.yaml ", font: CODE_FONT, chromeWidth: 12 },
+    { kind: "text", text: "file? ", font: BODY_FONT },
+    { kind: "box", width: 24, height: 24 },
+    { kind: "text", text: " Also the deployment pipeline needs a review before Friday.", font: BODY_FONT },
+  ];
+}
+
+const CHAT_RUN_STYLE_MAP = {
+  3: "code",      // config.yaml
+  5: "box",       // emoji box
+};
 
 function runDemo1() {
   const slider = document.getElementById("widthSlider");
@@ -692,7 +1036,7 @@ function runDemo1() {
     const result = layoutRuns(prepared, width, LINE_HEIGHT);
     const elapsed = ((performance.now() - t0) * 1000).toFixed(0);
 
-    renderChatLayout(result, renderArea, CHAT_RUN_STYLE_MAP);
+    renderRichLayout(result, renderArea, CHAT_RUN_STYLE_MAP);
 
     statsArea.innerHTML = `
       <span class="stat">Lines: <strong>${result.lines.length}</strong></span>
@@ -709,25 +1053,18 @@ function runDemo1() {
 
 function findMinWidth(text, font, lineHeight) {
   const prepared = prepareWithSegments(text, font);
-
-  // Get natural single-line width as upper bound
   let upper = 0;
   walkLineRanges(prepared, UNBOUNDED_WIDTH, (line) => {
     upper = Math.max(upper, line.width);
   });
   upper = Math.ceil(upper) + 1;
-
-  // Binary search for minimum width that still fits on 1 line
   let lower = 1;
   while (lower < upper) {
     const mid = Math.floor((lower + upper) / 2);
     let lineCount = 0;
     walkLineRanges(prepared, mid, () => { lineCount++; });
-    if (lineCount <= 1) {
-      upper = mid;
-    } else {
-      lower = mid + 1;
-    }
+    if (lineCount <= 1) upper = mid;
+    else lower = mid + 1;
   }
   return upper;
 }
@@ -743,7 +1080,6 @@ function runDemo2() {
 
   for (const phrase of phrases) {
     const minW = findMinWidth(phrase, BODY_FONT, LINE_HEIGHT);
-
     const row = document.createElement("div");
     row.className = "fit-row";
 
@@ -782,7 +1118,6 @@ function runDemo3() {
 
     const item = document.createElement("div");
     item.className = "intl-item";
-
     item.innerHTML = `
       <div class="intl-label">${sample.label}</div>
       <div class="intl-text">${escapeHtml(sample.text)}</div>
@@ -791,8 +1126,172 @@ function runDemo3() {
         <span class="stat">Height: <strong>${result.height}px</strong></span>
       </div>
     `;
-
     grid.appendChild(item);
+  }
+}
+
+// ── Demo 4: Nested Layout ──
+
+function runDemo4() {
+  const container = document.getElementById("nestedExamples");
+
+  // Example A: Mention chips with avatars
+  {
+    const example = document.createElement("div");
+    example.className = "nested-example";
+    example.innerHTML = `
+      <h3>Example A: Mention Chips with Avatar</h3>
+      <p class="example-desc">Composites with box (avatar) + text inside a paragraph. Each chip is measured as an atomic unit.</p>
+    `;
+
+    const runs = [
+      { kind: "text", text: "Assigned to ", font: BODY_FONT },
+      makeMentionChip("@Sarah Chen", BODY_FONT, { avatarWidth: 24, chromeWidth: 10 }),
+      { kind: "text", text: " and ", font: BODY_FONT },
+      makeMentionChip("@Marcus", BODY_FONT, { avatarWidth: 24, chromeWidth: 10 }),
+      { kind: "text", text: " — due Friday", font: BODY_FONT },
+    ];
+
+    const prepared = prepareRuns(runs);
+    const result = layoutRuns(prepared, 480, LINE_HEIGHT);
+
+    const renderArea = document.createElement("div");
+    renderArea.className = "render-area";
+    renderArea.style.maxWidth = "480px";
+    renderRichLayout(result, renderArea, {});
+
+    const stats = document.createElement("div");
+    stats.className = "stats";
+    stats.innerHTML = `
+      <span class="stat">Width: <strong>480px</strong></span>
+      <span class="stat">Lines: <strong>${result.lines.length}</strong></span>
+      <span class="stat">Height: <strong>${result.totalHeight}px</strong></span>
+    `;
+
+    example.appendChild(renderArea);
+    example.appendChild(stats);
+    container.appendChild(example);
+  }
+
+  // Example B: Status tags with slider
+  {
+    const example = document.createElement("div");
+    example.className = "nested-example";
+
+    const sliderId = "tagWidthSlider";
+    const valueId = "tagWidthValue";
+
+    example.innerHTML = `
+      <h3>Example B: Status Tags</h3>
+      <p class="example-desc">Simple composites (text-only chips) used as inline status tags. Resize to see wrapping.</p>
+      <div class="slider-row">
+        <label>Container width</label>
+        <input type="range" id="${sliderId}" min="200" max="700" value="400" />
+        <span class="slider-value" id="${valueId}">400px</span>
+      </div>
+    `;
+
+    const renderArea = document.createElement("div");
+    renderArea.className = "render-area";
+    renderArea.style.maxWidth = "400px";
+    renderArea.id = "tagRender";
+
+    const stats = document.createElement("div");
+    stats.className = "stats";
+    stats.id = "tagStats";
+
+    example.appendChild(renderArea);
+    example.appendChild(stats);
+    container.appendChild(example);
+
+    const runs = [
+      { kind: "text", text: "Status: ", font: BODY_FONT },
+      makeChip("blocked", CODE_FONT, { chromeWidth: 12 }),
+      { kind: "text", text: " by ", font: BODY_FONT },
+      makeChip("design review", CODE_FONT, { chromeWidth: 12 }),
+      { kind: "text", text: ", target ", font: BODY_FONT },
+      makeChip("P1", CODE_FONT, { chromeWidth: 12 }),
+      { kind: "text", text: " for ", font: BODY_FONT },
+      makeChip("Q2 launch", CODE_FONT, { chromeWidth: 12 }),
+    ];
+
+    const prepared = prepareRuns(runs);
+
+    function updateTags() {
+      const slider = document.getElementById(sliderId);
+      const valueLabel = document.getElementById(valueId);
+      const width = parseInt(slider.value);
+      valueLabel.textContent = width + "px";
+      renderArea.style.maxWidth = width + "px";
+
+      const result = layoutRuns(prepared, width, LINE_HEIGHT);
+      renderRichLayout(result, renderArea, {});
+
+      stats.innerHTML = `
+        <span class="stat">Width: <strong>${width}px</strong></span>
+        <span class="stat">Lines: <strong>${result.lines.length}</strong></span>
+        <span class="stat">Height: <strong>${result.totalHeight}px</strong></span>
+      `;
+    }
+
+    // Defer event binding until after DOM append
+    requestAnimationFrame(() => {
+      document.getElementById(sliderId).addEventListener("input", updateTags);
+      updateTags();
+    });
+  }
+
+  // Example C: Nested quoted message
+  {
+    const example = document.createElement("div");
+    example.className = "nested-example";
+    example.innerHTML = `
+      <h3>Example C: Nested Quoted Message</h3>
+      <p class="example-desc">A composite with maxWidth and chromeHeight creates an inline quote block. The outer layout treats it as an atomic box; internally the text wraps at 280px.</p>
+    `;
+
+    const runs = [
+      { kind: "text", text: "In response to ", font: BODY_FONT },
+      {
+        kind: "composite",
+        maxWidth: 280,
+        chromeWidth: 24,
+        chromeHeight: 16,
+        runs: [
+          { kind: "text", text: "Earlier: The deadline for the design review has been moved to next Thursday afternoon.", font: BODY_FONT }
+        ]
+      },
+      { kind: "text", text: " — we need more time.", font: BODY_FONT },
+    ];
+
+    const prepared = prepareRuns(runs);
+    const result = layoutRuns(prepared, 500, LINE_HEIGHT);
+
+    const renderArea = document.createElement("div");
+    renderArea.className = "render-area";
+    renderArea.style.maxWidth = "500px";
+    renderRichLayout(result, renderArea, {});
+
+    const stats = document.createElement("div");
+    stats.className = "stats";
+    stats.innerHTML = `
+      <span class="stat">Width: <strong>500px</strong></span>
+      <span class="stat">Lines: <strong>${result.lines.length}</strong></span>
+      <span class="stat">Height: <strong>${result.totalHeight}px</strong></span>
+      <span class="stat">Quote inner lines: <strong>${(() => {
+        // Find the composite fragment
+        for (const line of result.lines) {
+          for (const f of line.fragments) {
+            if (f.kind === "composite") return f.innerLayout.lines.length;
+          }
+        }
+        return "?";
+      })()}</strong></span>
+    `;
+
+    example.appendChild(renderArea);
+    example.appendChild(stats);
+    container.appendChild(example);
   }
 }
 
@@ -808,6 +1307,7 @@ async function init() {
   runDemo1();
   runDemo2();
   runDemo3();
+  runDemo4();
 
   document.getElementById("loading").style.display = "none";
   document.getElementById("app").style.display = "block";
