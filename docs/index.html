@@ -211,8 +211,19 @@
     padding: 16px;
     min-height: 60px;
     position: relative;
+    box-sizing: border-box;
+    display: inline-block;
+    vertical-align: top;
     overflow-x: visible;
     overflow-y: visible;
+  }
+
+  .render-content {
+    box-sizing: content-box;
+    width: var(--layout-width, 520px);
+    padding: 0;
+    border: 0;
+    overflow: visible;
   }
 
   .render-line {
@@ -529,7 +540,7 @@
             <span class="slider-value" id="widthValue">520px</span>
           </div>
 
-          <div class="render-area" id="chatRender" style="width:520px"></div>
+          <div class="render-area" id="chatRender"><div class="render-content" id="chatRenderContent" style="width:520px"></div></div>
 
           <div class="stats" id="chatStats"></div>
         </div>
@@ -1055,15 +1066,13 @@ function renderRichLayout(result, container, styleMap) {
   });
 }
 
-function getRenderableContentWidth(renderArea, targetWidth) {
-  renderArea.style.width = targetWidth + "px";
-  const style = getComputedStyle(renderArea);
-  const horizontalChrome =
-    (parseFloat(style.paddingLeft) || 0) +
-    (parseFloat(style.paddingRight) || 0) +
-    (parseFloat(style.borderLeftWidth) || 0) +
-    (parseFloat(style.borderRightWidth) || 0);
-  return Math.max(1, targetWidth - horizontalChrome);
+function createRenderContent(shell, layoutWidth, id = null) {
+  const rail = document.createElement("div");
+  rail.className = "render-content";
+  if (id) rail.id = id;
+  rail.style.width = layoutWidth + "px";
+  shell.appendChild(rail);
+  return rail;
 }
 
 // ── Demo 1: Chat Message ──
@@ -1088,7 +1097,7 @@ const CHAT_RUN_STYLE_MAP = {
 function runDemo1() {
   const slider = document.getElementById("widthSlider");
   const valueLabel = document.getElementById("widthValue");
-  const renderArea = document.getElementById("chatRender");
+  const renderContent = document.getElementById("chatRenderContent");
   const statsArea = document.getElementById("chatStats");
 
   const runs = buildChatRuns();
@@ -1097,13 +1106,13 @@ function runDemo1() {
   function update() {
     const width = parseInt(slider.value);
     valueLabel.textContent = width + "px";
-    const contentWidth = getRenderableContentWidth(renderArea, width);
+    renderContent.style.width = width + "px";
 
     const t0 = performance.now();
-    const result = layoutRuns(prepared, contentWidth, LINE_HEIGHT);
+    const result = layoutRuns(prepared, width, LINE_HEIGHT);
     const elapsed = ((performance.now() - t0) * 1000).toFixed(0);
 
-    renderRichLayout(result, renderArea, CHAT_RUN_STYLE_MAP);
+    renderRichLayout(result, renderContent, CHAT_RUN_STYLE_MAP);
 
     statsArea.innerHTML = `
       <span class="stat">Lines: <strong>${result.lines.length}</strong></span>
@@ -1223,6 +1232,7 @@ function runDemo4() {
 
     const renderArea = document.createElement("div");
     renderArea.className = "render-area nested-render-area";
+    const renderContent = createRenderContent(renderArea, 480);
 
     const stats = document.createElement("div");
     stats.className = "stats";
@@ -1231,9 +1241,9 @@ function runDemo4() {
     example.appendChild(stats);
     container.appendChild(example);
 
-    const contentWidth = getRenderableContentWidth(renderArea, 480);
-    const result = layoutRuns(prepared, contentWidth, LINE_HEIGHT);
-    renderRichLayout(result, renderArea, {});
+    const layoutWidth = 480;
+    const result = layoutRuns(prepared, layoutWidth, LINE_HEIGHT);
+    renderRichLayout(result, renderContent, {});
 
     stats.innerHTML = `
       <span class="stat">Width: <strong>480px</strong></span>
@@ -1262,8 +1272,8 @@ function runDemo4() {
 
     const renderArea = document.createElement("div");
     renderArea.className = "render-area nested-render-area";
-    renderArea.style.width = "400px";
     renderArea.id = "tagRender";
+    const renderContent = createRenderContent(renderArea, 400, "tagRenderContent");
 
     const stats = document.createElement("div");
     stats.className = "stats";
@@ -1291,10 +1301,10 @@ function runDemo4() {
       const valueLabel = document.getElementById(valueId);
       const width = parseInt(slider.value);
       valueLabel.textContent = width + "px";
-      const contentWidth = getRenderableContentWidth(renderArea, width);
+      renderContent.style.width = width + "px";
 
-      const result = layoutRuns(prepared, contentWidth, LINE_HEIGHT);
-      renderRichLayout(result, renderArea, {});
+      const result = layoutRuns(prepared, width, LINE_HEIGHT);
+      renderRichLayout(result, renderContent, {});
 
       stats.innerHTML = `
         <span class="stat">Width: <strong>${width}px</strong></span>
@@ -1337,6 +1347,7 @@ function runDemo4() {
 
     const renderArea = document.createElement("div");
     renderArea.className = "render-area nested-render-area";
+    const renderContent = createRenderContent(renderArea, 500);
 
     const stats = document.createElement("div");
     stats.className = "stats";
@@ -1345,9 +1356,9 @@ function runDemo4() {
     example.appendChild(stats);
     container.appendChild(example);
 
-    const contentWidth = getRenderableContentWidth(renderArea, 500);
-    const result = layoutRuns(prepared, contentWidth, LINE_HEIGHT);
-    renderRichLayout(result, renderArea, {});
+    const layoutWidth = 500;
+    const result = layoutRuns(prepared, layoutWidth, LINE_HEIGHT);
+    renderRichLayout(result, renderContent, {});
 
     stats.innerHTML = `
       <span class="stat">Width: <strong>500px</strong></span>

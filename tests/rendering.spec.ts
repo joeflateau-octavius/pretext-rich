@@ -16,33 +16,31 @@ async function setChatWidth(page: import('@playwright/test').Page, width: number
   await expect(page.locator('#widthValue')).toHaveText(`${width}px`);
 }
 
-test('no horizontal overflow in chat container across widths', async ({ page }) => {
+test('no horizontal overflow in chat shell/rail across widths', async ({ page }) => {
   await openDemo(page);
 
-  const render = page.locator('#chatRender');
+  const shell = page.locator('#chatRender');
+  const rail = page.locator('#chatRenderContent');
 
   for (const width of CHAT_WIDTHS) {
     await setChatWidth(page, width);
 
-    const box = await render.boundingBox();
-    expect(box).toBeTruthy();
+    const railBox = await rail.boundingBox();
+    expect(railBox).toBeTruthy();
 
-    const containerMetrics = await render.evaluate((el) => ({
+    const shellMetrics = await shell.evaluate((el) => ({
       scrollWidth: el.scrollWidth,
       clientWidth: el.clientWidth,
     }));
 
-    expect(containerMetrics.scrollWidth).toBeLessThanOrEqual(containerMetrics.clientWidth + 1);
+    expect(shellMetrics.scrollWidth).toBeLessThanOrEqual(shellMetrics.clientWidth + 1);
 
-    const lineBounds = await page.locator('#chatRender .render-line').evaluateAll((lines) =>
-      lines.map((line) => {
-        const rect = (line as HTMLElement).getBoundingClientRect();
-        return { right: rect.right };
-      }),
+    const lineRights = await page.locator('#chatRenderContent .render-line').evaluateAll((lines) =>
+      lines.map((line) => (line as HTMLElement).getBoundingClientRect().right),
     );
 
-    for (const line of lineBounds) {
-      expect(line.right).toBeLessThanOrEqual((box?.x ?? 0) + (box?.width ?? 0) + 1);
+    for (const right of lineRights) {
+      expect(right).toBeLessThanOrEqual((railBox?.x ?? 0) + (railBox?.width ?? 0) + 1);
     }
   }
 });
@@ -119,7 +117,7 @@ test('emoji inline box size is stable across widths', async ({ page }) => {
   }
 });
 
-test('nested layout section renders without overflow', async ({ page }) => {
+test('nested layout section renders without shell/rail overflow', async ({ page }) => {
   await openDemo(page);
 
   const nestedRenderAreas = page.locator('#demo-nested .nested-render-area');
@@ -128,8 +126,10 @@ test('nested layout section renders without overflow', async ({ page }) => {
 
   for (let i = 0; i < count; i++) {
     const area = nestedRenderAreas.nth(i);
-    const areaBox = await area.boundingBox();
-    expect(areaBox).toBeTruthy();
+    const rail = area.locator('.render-content').first();
+
+    const railBox = await rail.boundingBox();
+    expect(railBox).toBeTruthy();
 
     const metrics = await area.evaluate((el) => ({
       scrollWidth: el.scrollWidth,
@@ -137,12 +137,12 @@ test('nested layout section renders without overflow', async ({ page }) => {
     }));
     expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 1);
 
-    const lineRights = await area.locator('.render-line').evaluateAll((lines) =>
+    const lineRights = await rail.locator('.render-line').evaluateAll((lines) =>
       lines.map((line) => (line as HTMLElement).getBoundingClientRect().right),
     );
 
     for (const right of lineRights) {
-      expect(right).toBeLessThanOrEqual((areaBox?.x ?? 0) + (areaBox?.width ?? 0) + 1);
+      expect(right).toBeLessThanOrEqual((railBox?.x ?? 0) + (railBox?.width ?? 0) + 1);
     }
   }
 });
