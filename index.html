@@ -211,27 +211,14 @@
     padding: 16px;
     min-height: 60px;
     position: relative;
-    box-sizing: border-box;
-    display: inline-block;
-    vertical-align: top;
-    overflow-x: visible;
-    overflow-y: visible;
-  }
-
-  .render-content {
-    box-sizing: content-box;
-    width: var(--layout-width, 520px);
-    padding: 0;
-    border: 0;
     overflow: visible;
   }
 
   .render-line {
-    position: relative;
-    display: block;
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
     white-space: nowrap;
-    width: 100%;
-    min-width: 0;
   }
 
   .frag-text {
@@ -269,19 +256,18 @@
     border: 1px solid rgba(74,159,255,0.3);
     font-size: 14px;
     vertical-align: middle;
-    flex-shrink: 0;
   }
 
   /* ── Chip styles ── */
   .chip-mention {
     display: inline-flex;
     align-items: center;
+    gap: 4px;
     background: rgba(0, 229, 255, 0.15);
     border-radius: 12px;
+    padding: 2px 6px 2px 3px;
     vertical-align: middle;
     line-height: 1;
-    box-sizing: border-box;
-    flex-shrink: 0;
   }
 
   .chip-mention .avatar-circle {
@@ -301,43 +287,34 @@
     align-items: center;
     background: var(--code-bg);
     border-radius: 10px;
+    padding: 2px 8px;
     vertical-align: middle;
     line-height: 1;
-    box-sizing: border-box;
-    flex-shrink: 0;
-    overflow: hidden;
   }
 
   .chip-tag-text {
-    display: block;
-    min-width: 0;
-    max-width: 100%;
     font-family: var(--mono);
     font-size: 13px;
     color: #93c5fd;
     line-height: 1;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: clip;
   }
 
   .chip-quote {
     display: inline-block;
     background: rgba(74, 159, 255, 0.06);
-    border: 1px solid rgba(74, 159, 255, 0.3);
-    border-radius: 8px;
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 8px 12px;
     vertical-align: top;
     line-height: 1;
-    box-sizing: border-box;
-    flex-shrink: 0;
   }
 
   .chip-quote .quote-inner-line {
-    position: relative;
-    display: block;
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
     white-space: nowrap;
-    width: 100%;
-    min-width: 0;
   }
 
   .chip-quote .quote-inner-line .frag-text {
@@ -534,7 +511,7 @@
 
       <div class="demos">
         <!-- Demo 1: Chat Message -->
-        <div class="demo-card" id="demo-chat">
+        <div class="demo-card">
           <h2>💬 Chat Message</h2>
           <p class="subtitle">Mixed text runs with mention chips (composite), code spans, and inline boxes. Drag the slider to re-layout in real time.</p>
 
@@ -544,7 +521,7 @@
             <span class="slider-value" id="widthValue">520px</span>
           </div>
 
-          <div class="render-area" id="chatRender"><div class="render-content" id="chatRenderContent" style="width:520px"></div></div>
+          <div class="render-area" id="chatRender" style="max-width:520px"></div>
 
           <div class="stats" id="chatStats"></div>
         </div>
@@ -557,14 +534,14 @@
         </div>
 
         <!-- Demo 3: International text -->
-        <div class="demo-card" id="demo-intl">
+        <div class="demo-card">
           <h2>🌍 International Text</h2>
           <p class="subtitle">Measuring text across scripts, emoji, and mixed directions — all at 400px container width.</p>
           <div class="intl-grid" id="intlGrid"></div>
         </div>
 
         <!-- Demo 4: Nested Layout -->
-        <div class="demo-card" id="demo-nested">
+        <div class="demo-card">
           <h2>🧩 Nested Layout</h2>
           <p class="subtitle">Composites: inline paragraphs within paragraphs</p>
           <div class="nested-examples" id="nestedExamples"></div>
@@ -905,40 +882,6 @@ function getInitials(name) {
 }
 
 /**
- * Apply deterministic, data-driven outer geometry for composite fragments.
- */
-function applyCompositeOuterGeometry(el, frag) {
-  const contentBoxWidth = Math.max(0, frag.width - frag.marginLeft - frag.marginRight);
-  el.style.display = "inline-flex";
-  el.style.boxSizing = "border-box";
-  el.style.width = contentBoxWidth + "px";
-  el.style.minWidth = contentBoxWidth + "px";
-  el.style.maxWidth = contentBoxWidth + "px";
-  el.style.height = frag.height + "px";
-  el.style.flexShrink = "0";
-
-  el.dataset.composite = "true";
-  el.dataset.chromeWidth = String(frag.chromeWidth ?? 0);
-  el.dataset.chromeHeight = String(frag.chromeHeight ?? 0);
-  el.dataset.marginLeft = String(frag.marginLeft ?? 0);
-  el.dataset.marginRight = String(frag.marginRight ?? 0);
-  el.dataset.contentBoxWidth = String(contentBoxWidth);
-  el.dataset.expectedOuterWidth = String(contentBoxWidth);
-}
-
-function positionFragment(el, frag, lineHeight, elementHeight = null) {
-  const left = (frag.x ?? 0) + (frag.leadingGap ?? 0);
-  el.style.position = "absolute";
-  el.style.left = left + "px";
-  if (elementHeight === null) {
-    el.style.top = "0px";
-  } else {
-    const centeredTop = Math.max(0, (lineHeight - elementHeight) / 2);
-    el.style.top = centeredTop + "px";
-  }
-}
-
-/**
  * Render a composite fragment into a DOM element.
  */
 function renderCompositeFragment(frag) {
@@ -946,17 +889,10 @@ function renderCompositeFragment(frag) {
     const innerFrags = frag.innerLayout.lines[0].fragments;
     const boxFrag = innerFrags[0];
     const textFrag = innerFrags[1];
-    const padX = Math.max(0, (frag.chromeWidth ?? 0) / 2);
 
     const pill = document.createElement("span");
     pill.className = "chip-mention";
-    pill.setAttribute("data-kind", "mention-chip");
-    applyCompositeOuterGeometry(pill, frag);
-    pill.style.paddingLeft = padX + "px";
-    pill.style.paddingRight = padX + "px";
-    pill.style.paddingTop = "2px";
-    pill.style.paddingBottom = "2px";
-    pill.style.gap = (textFrag.leadingGap ?? 0) + "px";
+    pill.style.marginLeft = frag.leadingGap + "px";
 
     const avatar = document.createElement("span");
     avatar.className = "avatar-circle";
@@ -977,16 +913,10 @@ function renderCompositeFragment(frag) {
 
   if (isTagChip(frag)) {
     const textFrag = frag.innerLayout.lines[0].fragments[0];
-    const padX = Math.max(0, (frag.chromeWidth ?? 0) / 2);
 
     const pill = document.createElement("span");
     pill.className = "chip-tag";
-    pill.setAttribute("data-kind", "tag-chip");
-    applyCompositeOuterGeometry(pill, frag);
-    pill.style.paddingLeft = padX + "px";
-    pill.style.paddingRight = padX + "px";
-    pill.style.paddingTop = "2px";
-    pill.style.paddingBottom = "2px";
+    pill.style.marginLeft = frag.leadingGap + "px";
 
     const label = document.createElement("span");
     label.className = "chip-tag-text";
@@ -999,47 +929,31 @@ function renderCompositeFragment(frag) {
   // Generic composite / quote block: render with recursive inner layout
   const wrapper = document.createElement("span");
   wrapper.className = "chip-quote";
-  wrapper.setAttribute("data-kind", "generic-composite");
-  applyCompositeOuterGeometry(wrapper, frag);
-  wrapper.style.flexDirection = "column";
-  wrapper.style.alignItems = "stretch";
-
-  const padX = Math.max(0, (frag.chromeWidth ?? 0) / 2);
-  const padY = Math.max(0, (frag.chromeHeight ?? 0) / 2);
-  wrapper.style.paddingLeft = padX + "px";
-  wrapper.style.paddingRight = padX + "px";
-  wrapper.style.paddingTop = padY + "px";
-  wrapper.style.paddingBottom = padY + "px";
+  wrapper.style.marginLeft = frag.leadingGap + "px";
 
   const il = frag.innerLayout;
   for (const line of il.lines) {
     const lineEl = document.createElement("div");
     lineEl.className = "quote-inner-line";
-    lineEl.style.position = "relative";
     lineEl.style.height = line.height + "px";
     lineEl.style.lineHeight = line.height + "px";
-    lineEl.style.width = frag.innerWidth + "px";
 
     for (const innerFrag of line.fragments) {
       if (innerFrag.kind === "composite") {
-        const compositeEl = renderCompositeFragment(innerFrag);
-        positionFragment(compositeEl, innerFrag, line.height, innerFrag.height);
-        lineEl.appendChild(compositeEl);
+        lineEl.appendChild(renderCompositeFragment(innerFrag));
       } else if (innerFrag.kind === "box") {
         const boxEl = document.createElement("span");
         boxEl.className = "frag-box";
         boxEl.style.width = innerFrag.width + "px";
         boxEl.style.height = innerFrag.height + "px";
-        boxEl.style.flexShrink = "0";
-        positionFragment(boxEl, innerFrag, line.height, innerFrag.height);
+        boxEl.style.marginLeft = innerFrag.leadingGap + "px";
         lineEl.appendChild(boxEl);
       } else {
         const spanEl = document.createElement("span");
         spanEl.className = "frag-text";
+        spanEl.style.marginLeft = innerFrag.leadingGap + "px";
         if (innerFrag.font) spanEl.style.font = innerFrag.font;
-        spanEl.style.lineHeight = line.height + "px";
         spanEl.textContent = innerFrag.text;
-        positionFragment(spanEl, innerFrag, line.height, null);
         lineEl.appendChild(spanEl);
       }
     }
@@ -1050,31 +964,24 @@ function renderCompositeFragment(frag) {
 
 // ── Generic rich layout renderer ──
 
-function renderRichLayout(result, container, styleMap, railWidth) {
+function renderRichLayout(result, container, styleMap) {
   container.innerHTML = "";
-  result.lines.forEach((line, lineIndex) => {
+  for (const line of result.lines) {
     const lineEl = document.createElement("div");
     lineEl.className = "render-line";
-    lineEl.dataset.lineIndex = String(lineIndex);
-    lineEl.style.position = "relative";
     lineEl.style.height = line.height + "px";
     lineEl.style.lineHeight = line.height + "px";
-    lineEl.style.width = railWidth + "px";
 
     for (const frag of line.fragments) {
       if (frag.kind === "composite") {
-        const compositeEl = renderCompositeFragment(frag);
-        positionFragment(compositeEl, frag, line.height, frag.height);
-        lineEl.appendChild(compositeEl);
+        lineEl.appendChild(renderCompositeFragment(frag));
       } else if (frag.kind === "box") {
         const boxEl = document.createElement("span");
         boxEl.className = "frag-box";
-        boxEl.dataset.kind = "inline-box";
         boxEl.style.width = frag.width + "px";
         boxEl.style.height = frag.height + "px";
-        boxEl.style.flexShrink = "0";
+        boxEl.style.marginLeft = frag.leadingGap + "px";
         boxEl.textContent = "😊";
-        positionFragment(boxEl, frag, line.height, frag.height);
         lineEl.appendChild(boxEl);
       } else {
         const spanEl = document.createElement("span");
@@ -1082,24 +989,14 @@ function renderRichLayout(result, container, styleMap, railWidth) {
         if (style === "mention") spanEl.className = "frag-mention";
         else if (style === "code") spanEl.className = "frag-code";
         else spanEl.className = "frag-text";
+        spanEl.style.marginLeft = frag.leadingGap + "px";
         if (frag.font) spanEl.style.font = frag.font;
-        spanEl.style.lineHeight = line.height + "px";
         spanEl.textContent = frag.text;
-        positionFragment(spanEl, frag, line.height, null);
         lineEl.appendChild(spanEl);
       }
     }
     container.appendChild(lineEl);
-  });
-}
-
-function createRenderContent(shell, layoutWidth, id = null) {
-  const rail = document.createElement("div");
-  rail.className = "render-content";
-  if (id) rail.id = id;
-  rail.style.width = layoutWidth + "px";
-  shell.appendChild(rail);
-  return rail;
+  }
 }
 
 // ── Demo 1: Chat Message ──
@@ -1124,7 +1021,7 @@ const CHAT_RUN_STYLE_MAP = {
 function runDemo1() {
   const slider = document.getElementById("widthSlider");
   const valueLabel = document.getElementById("widthValue");
-  const renderContent = document.getElementById("chatRenderContent");
+  const renderArea = document.getElementById("chatRender");
   const statsArea = document.getElementById("chatStats");
 
   const runs = buildChatRuns();
@@ -1133,13 +1030,13 @@ function runDemo1() {
   function update() {
     const width = parseInt(slider.value);
     valueLabel.textContent = width + "px";
-    renderContent.style.width = width + "px";
+    renderArea.style.maxWidth = width + "px";
 
     const t0 = performance.now();
     const result = layoutRuns(prepared, width, LINE_HEIGHT);
     const elapsed = ((performance.now() - t0) * 1000).toFixed(0);
 
-    renderRichLayout(result, renderContent, CHAT_RUN_STYLE_MAP, width);
+    renderRichLayout(result, renderArea, CHAT_RUN_STYLE_MAP);
 
     statsArea.innerHTML = `
       <span class="stat">Lines: <strong>${result.lines.length}</strong></span>
@@ -1256,27 +1153,24 @@ function runDemo4() {
     ];
 
     const prepared = prepareRuns(runs);
+    const result = layoutRuns(prepared, 480, LINE_HEIGHT);
 
     const renderArea = document.createElement("div");
-    renderArea.className = "render-area nested-render-area";
-    const renderContent = createRenderContent(renderArea, 480);
+    renderArea.className = "render-area";
+    renderArea.style.maxWidth = "480px";
+    renderRichLayout(result, renderArea, {});
 
     const stats = document.createElement("div");
     stats.className = "stats";
-
-    example.appendChild(renderArea);
-    example.appendChild(stats);
-    container.appendChild(example);
-
-    const layoutWidth = 480;
-    const result = layoutRuns(prepared, layoutWidth, LINE_HEIGHT);
-    renderRichLayout(result, renderContent, {}, layoutWidth);
-
     stats.innerHTML = `
       <span class="stat">Width: <strong>480px</strong></span>
       <span class="stat">Lines: <strong>${result.lines.length}</strong></span>
       <span class="stat">Height: <strong>${result.totalHeight}px</strong></span>
     `;
+
+    example.appendChild(renderArea);
+    example.appendChild(stats);
+    container.appendChild(example);
   }
 
   // Example B: Status tags with slider
@@ -1298,9 +1192,9 @@ function runDemo4() {
     `;
 
     const renderArea = document.createElement("div");
-    renderArea.className = "render-area nested-render-area";
+    renderArea.className = "render-area";
+    renderArea.style.maxWidth = "400px";
     renderArea.id = "tagRender";
-    const renderContent = createRenderContent(renderArea, 400, "tagRenderContent");
 
     const stats = document.createElement("div");
     stats.className = "stats";
@@ -1328,10 +1222,10 @@ function runDemo4() {
       const valueLabel = document.getElementById(valueId);
       const width = parseInt(slider.value);
       valueLabel.textContent = width + "px";
-      renderContent.style.width = width + "px";
+      renderArea.style.maxWidth = width + "px";
 
       const result = layoutRuns(prepared, width, LINE_HEIGHT);
-      renderRichLayout(result, renderContent, {}, width);
+      renderRichLayout(result, renderArea, {});
 
       stats.innerHTML = `
         <span class="stat">Width: <strong>${width}px</strong></span>
@@ -1371,22 +1265,15 @@ function runDemo4() {
     ];
 
     const prepared = prepareRuns(runs);
+    const result = layoutRuns(prepared, 500, LINE_HEIGHT);
 
     const renderArea = document.createElement("div");
-    renderArea.className = "render-area nested-render-area";
-    const renderContent = createRenderContent(renderArea, 500);
+    renderArea.className = "render-area";
+    renderArea.style.maxWidth = "500px";
+    renderRichLayout(result, renderArea, {});
 
     const stats = document.createElement("div");
     stats.className = "stats";
-
-    example.appendChild(renderArea);
-    example.appendChild(stats);
-    container.appendChild(example);
-
-    const layoutWidth = 500;
-    const result = layoutRuns(prepared, layoutWidth, LINE_HEIGHT);
-    renderRichLayout(result, renderContent, {}, layoutWidth);
-
     stats.innerHTML = `
       <span class="stat">Width: <strong>500px</strong></span>
       <span class="stat">Lines: <strong>${result.lines.length}</strong></span>
@@ -1401,6 +1288,10 @@ function runDemo4() {
         return "?";
       })()}</strong></span>
     `;
+
+    example.appendChild(renderArea);
+    example.appendChild(stats);
+    container.appendChild(example);
   }
 }
 
