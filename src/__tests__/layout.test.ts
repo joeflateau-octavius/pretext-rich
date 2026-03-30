@@ -511,6 +511,45 @@ describe("Composite runs", () => {
       assert.equal(frag.width, 8); // just chrome
     }
   });
+
+  it("nested composite uses full outer width (inner + chrome + margins) for wrapping", () => {
+    const nestedChip: InlineRun = {
+      kind: "composite",
+      runs: [
+        {
+          kind: "composite",
+          runs: [{ kind: "text", text: "Joe", font: FONT }],
+          chromeWidth: 8,
+          marginLeft: 2,
+          marginRight: 2,
+        },
+      ],
+      chromeWidth: 6,
+      marginLeft: 1,
+      marginRight: 1,
+    };
+
+    // "abc " => 24px text, trailing gap = 4px.
+    // Inner composite outer width = 24 + 8 + 2 + 2 = 36.
+    // Outer composite total width = 36 + 6 + 1 + 1 = 44.
+    // Line total if kept on line 1 = 24 + 4 + 44 = 72 > 70, so it must wrap.
+    const result = layout(
+      [
+        { kind: "text", text: "abc ", font: FONT },
+        nestedChip,
+      ],
+      70
+    );
+
+    assert.equal(result.lines.length, 2);
+    assert.equal(result.lines[1]!.fragments[0]!.kind, "composite");
+
+    const nested = result.lines[1]!.fragments[0]!;
+    if (nested.kind === "composite") {
+      assert.equal(nested.innerWidth, 36);
+      assert.equal(nested.width, 44);
+    }
+  });
 });
 
 // ═════════════════════════════════════════════════════════════════════

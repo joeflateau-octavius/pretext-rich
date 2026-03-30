@@ -40,9 +40,24 @@ function computeNaturalWidth(items: PreparedItem[]): number {
   let totalWidth = 0;
   for (const item of items) {
     const gap = totalWidth > 0 ? item.leadingGap : 0;
-    const itemWidth = item.kind === "text"
-      ? item.fullWidth + item.chromeWidth
-      : item.width;
+
+    let itemWidth: number;
+    switch (item.kind) {
+      case "text":
+        itemWidth = item.fullWidth + item.chromeWidth;
+        break;
+      case "box":
+        itemWidth = item.width;
+        break;
+      case "composite":
+        itemWidth =
+          item.naturalInnerWidth +
+          item.chromeWidth +
+          item.marginLeft +
+          item.marginRight;
+        break;
+    }
+
     totalWidth += gap + itemWidth;
   }
   return totalWidth;
