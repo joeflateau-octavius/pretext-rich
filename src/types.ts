@@ -117,14 +117,15 @@ export type PreparedCompositeItem = {
   kind: "composite";
   runIndex: number;
   leadingGap: number;
-  width: number; // total layout width (includes chrome + margins)
-  height: number; // total height (includes chrome)
-  innerWidth: number; // just the inner content width (for renderer)
-  innerLayout: RichLayout;
+  /** Prepared inner runs for layout-time recursive layout. */
+  preparedInnerRuns: PreparedRuns;
+  /** Natural (shrink-wrap) width of inner content before any constraints. */
+  naturalInnerWidth: number;
   chromeWidth: number;
   chromeHeight: number;
   marginLeft: number;
   marginRight: number;
+  maxWidth?: number;
 };
 
 /** @internal A single prepared inline item. */

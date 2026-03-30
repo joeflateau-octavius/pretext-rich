@@ -400,8 +400,8 @@ describe("Composite runs", () => {
     // "abc def" = 24 + 4 + 24 = 52px natural inner width
     // maxWidth = 30 → inner lays out at 30px
     // "abc" = 24px fits on line 1, "def" = 24px on line 2
-    // Inner height = 2 × 20 (INNER_LH) = 40px
-    // chromeHeight = 6 → total height = 46px
+    // Inner height = 2 × LH(24) = 48px (inner uses same lineHeight as outer)
+    // chromeHeight = 6 → total height = 54px
     const result = layout(
       [{
         kind: "composite",
@@ -416,8 +416,8 @@ describe("Composite runs", () => {
     if (frag.kind === "composite") {
       // Inner width = min(52, 30) = 30
       assert.equal(frag.innerWidth, 30);
-      // Inner layout: 2 lines × 20px = 40px + 6px chrome = 46px
-      assert.equal(frag.height, 46);
+      // Inner layout: 2 lines × 24px = 48px + 6px chrome = 54px
+      assert.equal(frag.height, 54);
       assert.equal(frag.innerLayout.lines.length, 2);
     }
   });
@@ -447,14 +447,14 @@ describe("Composite runs", () => {
   });
 
   it("composite height: chromeHeight adds to inner layout height", () => {
-    // "Hi" = 16px. Inner layout = 1 line × 20px = 20px. chromeHeight = 10.
-    // Total height = 30px > LH=24 → line height = 30
+    // "Hi" = 16px. Inner layout = 1 line × 24px (uses outer lineHeight) = 24px. chromeHeight = 10.
+    // Total height = 34px > LH=24 → line height = 34
     const result = layout(
       [{ kind: "composite", runs: [{ kind: "text", text: "Hi", font: FONT }], chromeHeight: 10 }],
       100,
       24
     );
-    assert.equal(result.lines[0]!.height, 30);
+    assert.equal(result.lines[0]!.height, 34);
   });
 
   it("composite margins: marginLeft + marginRight add to effective layout width", () => {

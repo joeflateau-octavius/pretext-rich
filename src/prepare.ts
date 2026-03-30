@@ -6,12 +6,10 @@ import {
   type PreparedTextWithSegments,
 } from "@chenglou/pretext";
 
-import type { InlineRun, PreparedItem, PreparedRuns, RichLayout } from "./types.js";
-import { layoutRuns } from "./layout.js";
+import type { InlineRun, PreparedItem, PreparedRuns } from "./types.js";
 
 const LINE_START_CURSOR: LayoutCursor = { segmentIndex: 0, graphemeIndex: 0 };
 const UNBOUNDED_WIDTH = 100_000;
-const DEFAULT_INNER_LINE_HEIGHT = 20;
 
 // ── Collapsed space width cache ──────────────────────────────────────
 
@@ -101,36 +99,24 @@ export function prepareRuns(runs: InlineRun[]): PreparedRuns {
         const marginLeft = run.marginLeft ?? 0;
         const marginRight = run.marginRight ?? 0;
 
-        // 1. Recursively prepare inner runs
+        // 1. Recursively prepare inner runs (measure text, but NO layout)
         const innerPrepared = prepareRuns(run.runs);
 
         // 2. Find natural (shrink-wrap) inner width from prepared items
-        const naturalWidth = computeNaturalWidth(innerPrepared._items);
+        const naturalInnerWidth = computeNaturalWidth(innerPrepared._items);
 
-        // Apply maxWidth constraint
-        const innerWidth = run.maxWidth !== undefined
-          ? Math.min(naturalWidth, run.maxWidth)
-          : naturalWidth;
-
-        // 3. Layout inner content at the determined width
-        const innerLayout = layoutRuns(innerPrepared, innerWidth, DEFAULT_INNER_LINE_HEIGHT);
-
-        // 4. Compute total dimensions
-        const totalWidth = innerWidth + chromeWidth + marginLeft + marginRight;
-        const totalHeight = innerLayout.totalHeight + chromeHeight;
-
+        // Store prepared inner runs — layout happens at layout-time
         items.push({
           kind: "composite",
           runIndex: index,
           leadingGap: pendingGap,
-          width: totalWidth,
-          height: totalHeight,
-          innerWidth,
-          innerLayout,
+          preparedInnerRuns: innerPrepared,
+          naturalInnerWidth,
           chromeWidth,
           chromeHeight,
           marginLeft,
           marginRight,
+          maxWidth: run.maxWidth,
         });
         pendingGap = 0;
         break;

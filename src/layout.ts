@@ -71,23 +71,43 @@ export function layoutRuns(
 
         case "composite": {
           const leadingGap = fragments.length === 0 ? 0 : item.leadingGap;
-          const totalWidth = leadingGap + item.width;
+
+          // Compute effective inner width based on whether maxWidth is set
+          let effectiveInnerWidth: number;
+          if (item.maxWidth !== undefined) {
+            // Responsive: fill available space, capped by maxWidth
+            const availableInner = Math.max(0,
+              Math.max(0, remainingWidth - leadingGap) - item.chromeWidth - item.marginLeft - item.marginRight
+            );
+            effectiveInnerWidth = Math.min(item.maxWidth, availableInner);
+          } else {
+            // Atomic: use natural shrink-wrap width (chips, mentions)
+            effectiveInnerWidth = item.naturalInnerWidth;
+          }
+
+          // Recursively layout inner content at layout-time
+          const innerLayout = layoutRuns(item.preparedInnerRuns, effectiveInnerWidth, lineHeight);
+
+          const compositeWidth = effectiveInnerWidth + item.chromeWidth + item.marginLeft + item.marginRight;
+          const compositeHeight = innerLayout.totalHeight + item.chromeHeight;
+
+          const totalWidth = leadingGap + compositeWidth;
 
           // If it doesn't fit and we're not at line start, break to next line
           if (fragments.length > 0 && totalWidth > remainingWidth) break lineLoop;
 
           // Track tallest item on this line
-          if (item.height > maxBoxHeight) maxBoxHeight = item.height;
+          if (compositeHeight > maxBoxHeight) maxBoxHeight = compositeHeight;
 
           fragments.push({
             kind: "composite",
             runIndex: item.runIndex,
             leadingGap,
             x: lineWidth,
-            width: item.width,
-            height: item.height,
-            innerWidth: item.innerWidth,
-            innerLayout: item.innerLayout,
+            width: compositeWidth,
+            height: compositeHeight,
+            innerWidth: effectiveInnerWidth,
+            innerLayout,
             chromeWidth: item.chromeWidth,
             chromeHeight: item.chromeHeight,
             marginLeft: item.marginLeft,

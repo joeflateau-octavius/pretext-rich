@@ -262,6 +262,107 @@ test('nested layout section renders without shell/rail overflow', async ({ page 
   }
 });
 
+// ═══════════════════════════════════════════════════════════════════
+// RESPONSIVE COMPOSITE (QUOTE BLOCK) TESTS
+// ═══════════════════════════════════════════════════════════════════
+
+async function setQuoteWidth(page: import('@playwright/test').Page, width: number) {
+  await page.locator('#quoteWidthSlider').evaluate((el, value) => {
+    const input = el as HTMLInputElement;
+    input.value = String(value);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }, width);
+  await expect(page.locator('#quoteWidthValue')).toHaveText(`${width}px`);
+}
+
+function getQuoteMetrics(page: import('@playwright/test').Page) {
+  return page.locator('#quoteRenderContent [data-kind="generic-composite"]').first().evaluate((el) => {
+    const rect = (el as HTMLElement).getBoundingClientRect();
+    const innerLines = el.querySelectorAll('.quote-inner-line');
+    return {
+      outerWidth: rect.width,
+      outerHeight: rect.height,
+      innerLineCount: innerLines.length,
+    };
+  });
+}
+
+test('quote block expands when container widens', async ({ page }) => {
+  await openDemo(page);
+
+  // Set narrow width first
+  await setQuoteWidth(page, 400);
+  const narrow = await getQuoteMetrics(page);
+
+  // Widen the container
+  await setQuoteWidth(page, 600);
+  const wide = await getQuoteMetrics(page);
+
+  // Quote should be wider at 600px than at 400px
+  expect(wide.outerWidth).toBeGreaterThan(narrow.outerWidth);
+});
+
+test('quote block shrinks when container narrows', async ({ page }) => {
+  await openDemo(page);
+
+  // Set wide first
+  await setQuoteWidth(page, 600);
+  const wide = await getQuoteMetrics(page);
+
+  // Narrow the container
+  await setQuoteWidth(page, 250);
+  const narrow = await getQuoteMetrics(page);
+
+  // Quote should be narrower at 250px than at 600px
+  expect(narrow.outerWidth).toBeLessThan(wide.outerWidth);
+});
+
+test('quote block maxWidth cap is respected', async ({ page }) => {
+  await openDemo(page);
+
+  // The quote has maxWidth: 280, chromeWidth: 24
+  // So the outer width should never exceed 280 + 24 = 304px
+  await setQuoteWidth(page, 800);
+  const metrics = await getQuoteMetrics(page);
+
+  // Max outer width = maxWidth(280) + chromeWidth(24) = 304
+  expect(metrics.outerWidth).toBeLessThanOrEqual(304 + 1);
+});
+
+test('quote inner content wraps correctly at different widths', async ({ page }) => {
+  await openDemo(page);
+
+  // At narrow width, inner text should wrap to more lines
+  await setQuoteWidth(page, 250);
+  const narrow = await getQuoteMetrics(page);
+
+  // At wider width, fewer lines
+  await setQuoteWidth(page, 600);
+  const wide = await getQuoteMetrics(page);
+
+  // Narrow should have more inner lines than wide (or at least equal)
+  expect(narrow.innerLineCount).toBeGreaterThanOrEqual(wide.innerLineCount);
+  // With enough text in the quote, narrow should have strictly more lines
+  expect(narrow.innerLineCount).toBeGreaterThan(wide.innerLineCount);
+});
+
+test('quote block height reflects inner content line count', async ({ page }) => {
+  await openDemo(page);
+
+  // At narrow width
+  await setQuoteWidth(page, 250);
+  const narrow = await getQuoteMetrics(page);
+
+  // At wide width
+  await setQuoteWidth(page, 600);
+  const wide = await getQuoteMetrics(page);
+
+  // More inner lines = taller quote
+  expect(narrow.outerHeight).toBeGreaterThan(wide.outerHeight);
+});
+
+// ═══════════════════════════════════════════════════════════════════
+
 test('international section keeps CJK/emoji glyphs and is visible', async ({ page }) => {
   await openDemo(page);
 

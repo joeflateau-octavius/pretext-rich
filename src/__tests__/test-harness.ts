@@ -103,14 +103,13 @@ type PreparedCompositeItem = {
   kind: "composite";
   runIndex: number;
   leadingGap: number;
-  width: number;
-  height: number;
-  innerWidth: number;
-  innerLayout: RichLayout;
+  preparedInnerRuns: PreparedRuns;
+  naturalInnerWidth: number;
   chromeWidth: number;
   chromeHeight: number;
   marginLeft: number;
   marginRight: number;
+  maxWidth?: number;
 };
 
 type PreparedItem = PreparedTextItem | PreparedBoxItem | PreparedCompositeItem;
@@ -169,36 +168,24 @@ export function prepareRuns(runs: InlineRun[]): PreparedRuns {
         const marginLeft = run.marginLeft ?? 0;
         const marginRight = run.marginRight ?? 0;
 
-        // 1. Recursively prepare inner runs
+        // 1. Recursively prepare inner runs (measure text, but NO layout)
         const innerPrepared = prepareRuns(run.runs);
 
         // 2. Find natural (shrink-wrap) inner width
-        const naturalWidth = computeNaturalWidth(innerPrepared._items);
+        const naturalInnerWidth = computeNaturalWidth(innerPrepared._items);
 
-        // Apply maxWidth constraint
-        const innerWidth = run.maxWidth !== undefined
-          ? Math.min(naturalWidth, run.maxWidth)
-          : naturalWidth;
-
-        // 3. Layout inner content
-        const innerLayout = layoutRuns(innerPrepared, innerWidth, DEFAULT_INNER_LINE_HEIGHT);
-
-        // 4. Compute total dimensions
-        const totalWidth = innerWidth + chromeWidth + marginLeft + marginRight;
-        const totalHeight = innerLayout.totalHeight + chromeHeight;
-
+        // Store prepared inner runs — layout happens at layout-time
         items.push({
           kind: "composite",
           runIndex: index,
           leadingGap: pendingGap,
-          width: totalWidth,
-          height: totalHeight,
-          innerWidth,
-          innerLayout,
+          preparedInnerRuns: innerPrepared,
+          naturalInnerWidth,
           chromeWidth,
           chromeHeight,
           marginLeft,
           marginRight,
+          maxWidth: run.maxWidth,
         });
         pendingGap = 0;
         break;
@@ -299,21 +286,41 @@ export function layoutRuns(
 
         case "composite": {
           const leadingGap = fragments.length === 0 ? 0 : item.leadingGap;
-          const totalWidth = leadingGap + item.width;
+
+          // Compute effective inner width based on whether maxWidth is set
+          let effectiveInnerWidth: number;
+          if (item.maxWidth !== undefined) {
+            // Responsive: fill available space, capped by maxWidth
+            const availableInner = Math.max(0,
+              Math.max(0, remainingWidth - leadingGap) - item.chromeWidth - item.marginLeft - item.marginRight
+            );
+            effectiveInnerWidth = Math.min(item.maxWidth, availableInner);
+          } else {
+            // Atomic: use natural shrink-wrap width (chips, mentions)
+            effectiveInnerWidth = item.naturalInnerWidth;
+          }
+
+          // Recursively layout inner content at layout-time
+          const innerLayout = layoutRuns(item.preparedInnerRuns, effectiveInnerWidth, lineHeight);
+
+          const compositeWidth = effectiveInnerWidth + item.chromeWidth + item.marginLeft + item.marginRight;
+          const compositeHeight = innerLayout.totalHeight + item.chromeHeight;
+
+          const totalWidth = leadingGap + compositeWidth;
 
           if (fragments.length > 0 && totalWidth > remainingWidth) break lineLoop;
 
-          if (item.height > maxBoxHeight) maxBoxHeight = item.height;
+          if (compositeHeight > maxBoxHeight) maxBoxHeight = compositeHeight;
 
           fragments.push({
             kind: "composite",
             runIndex: item.runIndex,
             leadingGap,
             x: lineWidth,
-            width: item.width,
-            height: item.height,
-            innerWidth: item.innerWidth,
-            innerLayout: item.innerLayout,
+            width: compositeWidth,
+            height: compositeHeight,
+            innerWidth: effectiveInnerWidth,
+            innerLayout,
             chromeWidth: item.chromeWidth,
             chromeHeight: item.chromeHeight,
             marginLeft: item.marginLeft,
