@@ -148,6 +148,8 @@ export function layoutRuns(
                 font: item.font,
                 leadingGap,
                 x: lineWidth,
+                textWidth: item.fullWidth,
+                chromeWidth: item.chromeWidth,
               });
               lineWidth += fullWidth;
               remainingWidth = Math.max(0, safeWidth - lineWidth);
@@ -183,6 +185,8 @@ export function layoutRuns(
             font: item.font,
             leadingGap,
             x: lineWidth,
+            textWidth: line.width,
+            chromeWidth: item.chromeWidth,
           });
           lineWidth += leadingGap + line.width + item.chromeWidth;
           remainingWidth = Math.max(0, safeWidth - lineWidth);

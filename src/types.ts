@@ -49,6 +49,10 @@ export type LineFragment =
       font: string;
       leadingGap: number;
       x: number;
+      /** Width of the text content only (excluding chrome). Same units as canvas measureText. */
+      textWidth: number;
+      /** Horizontal chrome (padding) around the text, in pixels. 0 for plain text. */
+      chromeWidth: number;
     }
   | {
       kind: "box";

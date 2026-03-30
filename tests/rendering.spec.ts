@@ -363,6 +363,64 @@ test('quote block height reflects inner content line count', async ({ page }) =>
 
 // ═══════════════════════════════════════════════════════════════════
 
+test('chat does not overflow at width 407', async ({ page }) => {
+  await openDemo(page);
+  
+  // Test at width 393 which has max overflow
+  await setChatWidth(page, 393);
+  
+  const details = await page.locator('#chatRenderContent').evaluate(el => {
+    const railRect = el.getBoundingClientRect();
+    const lines = el.querySelectorAll('.render-line');
+    const result: any[] = [];
+    lines.forEach((line, li) => {
+      const children = Array.from(line.children) as HTMLElement[];
+      children.forEach((child, ci) => {
+        const childRect = child.getBoundingClientRect();
+        result.push({
+          line: li,
+          child: ci,
+          className: child.className,
+          text: child.textContent?.substring(0, 30),
+          left: childRect.left - railRect.left,
+          width: childRect.width,
+          right: childRect.right - railRect.left,
+          railWidth: railRect.width,
+          overflow: childRect.right - railRect.right,
+          style_left: (child as HTMLElement).style.left,
+        });
+      });
+    });
+    return result;
+  });
+
+  const codeMetrics = await page.locator('#chatRenderContent .frag-code').first().evaluate((el) => {
+    const cs = getComputedStyle(el as HTMLElement);
+    const c = document.createElement('canvas');
+    const ctx = c.getContext('2d')!;
+    ctx.font = '13px JetBrains Mono';
+    const w1 = ctx.measureText('config.').width;
+    ctx.font = cs.font;
+    const w2 = ctx.measureText('config.').width;
+    const textNode = (el as HTMLElement).textContent || '';
+    return {
+      font: cs.font,
+      fontFamily: cs.fontFamily,
+      fontSize: cs.fontSize,
+      padL: cs.paddingLeft,
+      padR: cs.paddingRight,
+      canvasWidthDirect: w1,
+      canvasWidthComputedFont: w2,
+      textNode,
+      domWidth: (el as HTMLElement).getBoundingClientRect().width,
+    };
+  });
+
+  console.log('All fragments:', JSON.stringify(details, null, 2));
+  console.log('Code metrics:', JSON.stringify(codeMetrics, null, 2));
+  expect(details.filter((d: any) => d.overflow > 1).length).toBe(0);
+});
+
 test('international section keeps CJK/emoji glyphs and is visible', async ({ page }) => {
   await openDemo(page);
 

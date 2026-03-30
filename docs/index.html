@@ -803,7 +803,7 @@ function layoutRuns(prepared, containerWidth, lineHeight) {
           if (textCursor === null) {
             const fullWidth = leadingGap + item.fullWidth + item.chromeWidth;
             if (fullWidth <= remainingWidth) {
-              fragments.push({ kind: "text", text: item.fullText, font: item.font, leadingGap, x: lineWidth, runIndex: item.runIndex });
+              fragments.push({ kind: "text", text: item.fullText, font: item.font, leadingGap, x: lineWidth, runIndex: item.runIndex, textWidth: item.fullWidth, chromeWidth: item.chromeWidth });
               lineWidth += fullWidth;
               remainingWidth = Math.max(0, safeWidth - lineWidth);
               itemIndex++;
@@ -816,7 +816,7 @@ function layoutRuns(prepared, containerWidth, lineHeight) {
           if (line === null) { itemIndex++; textCursor = null; continue; }
           if (cursorsMatch(startCursor, line.end)) { itemIndex++; textCursor = null; continue; }
 
-          fragments.push({ kind: "text", text: line.text, font: item.font, leadingGap, x: lineWidth, runIndex: item.runIndex });
+          fragments.push({ kind: "text", text: line.text, font: item.font, leadingGap, x: lineWidth, runIndex: item.runIndex, textWidth: line.width, chromeWidth: item.chromeWidth });
           lineWidth += leadingGap + line.width + item.chromeWidth;
           remainingWidth = Math.max(0, safeWidth - lineWidth);
 
@@ -1046,6 +1046,12 @@ function renderCompositeFragment(frag) {
         if (innerFrag.font) spanEl.style.font = innerFrag.font;
         spanEl.style.lineHeight = line.height + "px";
         spanEl.textContent = innerFrag.text;
+        if ((innerFrag.chromeWidth ?? 0) > 0) {
+          spanEl.style.width = (innerFrag.textWidth + innerFrag.chromeWidth) + "px";
+          spanEl.style.boxSizing = "border-box";
+          spanEl.style.overflow = "hidden";
+          spanEl.style.display = "inline-block";
+        }
         positionFragment(spanEl, innerFrag, line.height, null);
         lineEl.appendChild(spanEl);
       }
@@ -1092,6 +1098,14 @@ function renderRichLayout(result, container, styleMap, railWidth) {
         if (frag.font) spanEl.style.font = frag.font;
         spanEl.style.lineHeight = line.height + "px";
         spanEl.textContent = frag.text;
+        // Pin width to layout-computed dimensions to prevent browser measurement
+        // drift causing overflow. Width = textWidth + chromeWidth (padding).
+        if ((frag.chromeWidth ?? 0) > 0) {
+          spanEl.style.width = (frag.textWidth + frag.chromeWidth) + "px";
+          spanEl.style.boxSizing = "border-box";
+          spanEl.style.overflow = "hidden";
+          spanEl.style.display = "inline-block";
+        }
         positionFragment(spanEl, frag, line.height, null);
         lineEl.appendChild(spanEl);
       }
